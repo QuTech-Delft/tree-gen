@@ -5,6 +5,10 @@ endif()
 
 project(tree-gen CXX)
 
+# If tree-gen was already included elsewhere in the project, don't include it
+# again. There should be only one place for it and one version per project.
+if(NOT TARGET tree-gen)
+
 # Require C++11 compiler support.
 if(CMAKE_VERSION VERSION_LESS "3.1")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -97,3 +101,5 @@ if (${CMAKE_PROJECT_NAME} STREQUAL tree-gen)
         FILES_MATCHING PATTERN "*.hpp"
     )
 endif()
+
+endif() # NOT TARGET tree-gen
