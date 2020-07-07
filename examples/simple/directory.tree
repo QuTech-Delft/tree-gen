@@ -1,20 +1,21 @@
+// Set the names of the output files and attach \file docstrings for Doxygen.
 # Implementation for classes representing a Windows directory tree.
 source "directory.cpp"
-
 # Header for classes representing a Windows directory tree.
 header "directory.hpp"
 
-# Include tree base classes.
+// Include tree base classes.
 include "tree-base.hpp"
 tree_namespace tree::base
 
-# Include primitive types.
+// Include primitive types.
 include "primitives.hpp"
 
-# Initialization function to use to construct default values for the tree base
-# classes and primitives.
+// Initialization function to use to construct default values for the tree base
+// classes and primitives.
 initialize_function primitives::initialize
 
+// Set the namespace for the generated classes and attach a docstring.
 # Namespace for classes representing a Windows directory tree.
 namespace directory
 

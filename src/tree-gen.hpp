@@ -110,9 +110,12 @@
  * both forms (title case for the class names, snake case for methods and
  * members).
  *
- * Note also the comments explicitly added to the example. These comments are
- * actually used by the generator; they are copied into the source code using
- * javadoc-style comment blocks.
+ * Note also the comments explicitly added to the example. Comments using a `#`
+ * are interpreted as docstrings by the generator; they are copied into the
+ * source code using javadoc-style comment blocks. This also means you can't
+ * use `#`-"comments" everywhere, since they're actually a grammatical
+ * construct. Therefore, tree-gen also supports `//` comments, which are
+ * ignored by the parser as per the norm.
  *
  * The order in which nodes are defined doesn't matter. This allows you to make
  * recursive tree structures, without having to worry about forward
@@ -125,20 +128,19 @@
  * specified. Note that most directives are required.
  *
  *  - `source "<filename>"`: sets the filename for the generated C++ file. Any
- *    comment above the directive is copied into the file as file-level doxygen
- *    documentation.
+ *    docstring above the directive is copied into the file as file-level
+ *    doxygen documentation.
  *
  *  - `header "<filename>"`: sets the filename for the generated header file.
- *    Any comment above the directive is copied into the file as file-level
+ *    Any docstring above the directive is copied into the file as file-level
  *    doxygen documentation.
  *
  *  - `tree_namespace <namespace::path>`: the namespace that the
- *    Base/Maybe/One/Any/Many classes live in. Comment is ignored.
+ *    Base/Maybe/One/Any/Many classes live in.
  *
  *  - `initialize_function <namespace::path::initialize>`: the name (including
  *    namespace path leading up to it) of the `T()` function used for getting
- *    the default value of any of the used primitive classes. Comment is
- *    ignored.
+ *    the default value of any of the used primitive classes.
  *
  *  - `location <namespace_path::SourceLocation>`: optionally, the name of the
  *    source location annotation class (including namespace path leading up to
@@ -146,19 +148,19 @@
  *    when doing a debug dump, and if it exists, uses it to add source
  *    information to the node, by streaming out a `#` followed by the stream
  *    overload for the class. The base class needs to be capable of annotations
- *    if you use this. Comment is ignored.
+ *    if you use this.
  *
  *  - `include "<path>"`: adds an `#include` statement to the top of the
- *    generated header file. Comment is ignored.
+ *    generated header file.
  *
  *  - `src_include "<path>"`: like `include`, but adds to the top of the
  *    generated C++ file only.
  *
  *  - `namespace <name>`: used to specify the namespace for the generated tree
  *    classes. As in C++, you need multiple of these to specify the full path.
- *    The comment for the *first* annotation of this type that has a comment
- *    in front is used to document the innermost namespace javadoc-style for
- *    Doxygen documentation.
+ *    The docstring for the *first* annotation of this type that has a
+ *    docstring in front is used to document the innermost namespace
+ *    javadoc-style for Doxygen documentation.
  *
  * \section apis Generated APIs
  *

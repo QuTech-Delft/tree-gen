@@ -43,6 +43,9 @@
     /* Docstrings */
 #.*                                                 WITH_STR(DOCSTRING);
 
+    /* Comments */
+[/][/].*                                            DELETE;
+
     /* Gobble up whitespace */
 [ \t]+                                              DELETE;
 
