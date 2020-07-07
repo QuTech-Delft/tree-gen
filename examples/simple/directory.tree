@@ -1,0 +1,62 @@
+# Implementation for classes representing a Windows directory tree.
+source "directory.cpp"
+
+# Header for classes representing a Windows directory tree.
+header "directory.hpp"
+
+# Include tree base classes.
+include "tree-base.hpp"
+tree_namespace tree::base
+
+# Include primitive types.
+include "primitives.hpp"
+
+# Initialization function to use to construct default values for the tree base
+# classes and primitives.
+initialize_function primitives::initialize
+
+# Namespace for classes representing a Windows directory tree.
+namespace directory
+
+# Root node, containing the drives and associated directory trees.
+system {
+
+    # The drives available on the system. There must be at least one.
+    drives: Many<drive>;
+
+}
+
+# Represents a drive.
+drive {
+
+    # The drive letter used to identify it.
+    letter: primitives::Letter;
+
+    # Root directory.
+    root_dir: One<directory>;
+
+}
+
+# Represents a directory entry.
+entry {
+
+    # Name of the directory entry.
+    name: primitives::String;
+
+    # Represents a regular file.
+    file {
+
+        # The file contents.
+        contents: primitives::String;
+
+    }
+
+    # Represents a (sub)directory.
+    directory {
+
+        # The directory contents. Note that directories can be empty.
+        entries: Any<entry>;
+
+    }
+
+}
