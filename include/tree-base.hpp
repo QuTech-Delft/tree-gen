@@ -11,12 +11,8 @@
 #include <typeindex>
 #include <unordered_map>
 #include <functional>
+#include "tree-compat.hpp"
 #include "tree-annotatable.hpp"
-
-// ssize_t is not defined on Windows, so we replace it with a long long.
-#ifdef _WIN32
-#define ssize_t long long
-#endif
 
 namespace tree {
 
@@ -369,7 +365,7 @@ public:
      * Adds the given value. No-op when the value is empty.
      */
     template <class S>
-    void add(const Maybe<S> &ob, ssize_t pos=-1) {
+    void add(const Maybe<S> &ob, signed_size_t pos=-1) {
         if (ob.empty()) {
             return;
         }
@@ -391,7 +387,7 @@ public:
      * that can only be done with raw pointers.
      */
     template <class S>
-    void add_raw(S *ob, ssize_t pos=-1) {
+    void add_raw(S *ob, signed_size_t pos=-1) {
         if (!ob) {
             throw std::runtime_error("add_raw called with nullptr!");
         }
@@ -413,7 +409,7 @@ public:
      * Removes the object at the given index, or at the back if no index is
      * given.
      */
-    void remove(ssize_t pos=-1) {
+    void remove(signed_size_t pos=-1) {
         if (size() == 0) {
             return;
         }
