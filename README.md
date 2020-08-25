@@ -11,10 +11,11 @@ progress.
 
 ## File list
 
- - `src`: source and private header files for the generator program.
+ - `generator`: source and private header files for the generator program.
 
- - `include`: public header files that you may use as base classes to the tree
-   structures. But you can also substitute your own.
+ - `src`: source and private header files for the support library.
+
+ - `include`: public header files for the support library.
 
  - `cmake`: contains CMake helper modules for building flex/bison from source
    if they are not installed.

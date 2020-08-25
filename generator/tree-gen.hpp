@@ -127,12 +127,12 @@
  * file, before the first node. Their order doesn't matter, unless otherwise
  * specified. Note that most directives are required.
  *
- *  - `source "<filename>"`: sets the filename for the generated C++ file. Any
- *    docstring above the directive is copied into the file as file-level
+ *  - `source`: Used to specify documentation for the generated source file;
+ *    any docstring above the directive is copied into the file as file-level
  *    doxygen documentation.
  *
- *  - `header "<filename>"`: sets the filename for the generated header file.
- *    Any docstring above the directive is copied into the file as file-level
+ *  - `header`: Used to specify documentation for the generated header file;
+ *    any docstring above the directive is copied into the file as file-level
  *    doxygen documentation.
  *
  *  - `tree_namespace <namespace::path>`: the namespace that the
@@ -505,16 +505,6 @@ private:
 public:
 
     /**
-     * The file to output the cpp source to.
-     */
-    std::string source_filename;
-
-    /**
-     * The file to output the header to.
-     */
-    std::string header_filename;
-
-    /**
      * Source file documentation.
      */
     std::string source_doc;
@@ -567,24 +557,16 @@ public:
     Nodes nodes;
 
     /**
-     * Sets the source filename.
+     * Sets the source file documentation.
      */
-    void set_source(const std::string &fname, const std::string &doc) {
-        if (!source_filename.empty()) {
-            throw std::runtime_error("duplicate source filename");
-        }
-        source_filename = fname;
+    void set_source_doc(const std::string &doc) {
         source_doc = doc;
     }
 
     /**
-     * Sets the header filename.
+     * Sets the header file documentation.
      */
-    void set_header(const std::string &fname, const std::string &doc) {
-        if (!header_filename.empty()) {
-            throw std::runtime_error("duplicate header filename");
-        }
-        header_filename = fname;
+    void set_header_doc(const std::string &doc) {
         header_doc = doc;
     }
 
@@ -657,12 +639,6 @@ public:
      * Checks for errors, resolves node names, and builds the nodes vector.
      */
     void build() {
-        if (source_filename.empty()) {
-            throw std::runtime_error("missing source filename");
-        }
-        if (header_filename.empty()) {
-            throw std::runtime_error("missing header filename");
-        }
         if (initialize_function.empty()) {
             throw std::runtime_error("initialization function not specified");
         }

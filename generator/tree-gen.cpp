@@ -685,16 +685,26 @@ int main(
     fclose(fptr);
 
     // Open the output files.
-    auto header = std::ofstream(std::string(argv[2]) + "/" + specification.header_filename);
+    auto header_filename = std::string(argv[2]);
+    auto header = std::ofstream(header_filename);
     if (!header.is_open()) {
         std::cerr << "Failed to open header file for writing" << std::endl;
         return 1;
     }
-    auto source = std::ofstream(std::string(argv[3]) + "/" + specification.source_filename);
+    auto source = std::ofstream(std::string(argv[3]));
     if (!source.is_open()) {
         std::cerr << "Failed to open source file for writing" << std::endl;
         return 1;
     }
+
+    // Strip the path from the header filename such that it can be used for the
+    // include guard and the #include directive in the source file.
+    auto sep_pos = header_filename.rfind('/');
+    auto backslash_pos = header_filename.rfind('\\');
+    if (backslash_pos != std::string::npos && backslash_pos > sep_pos) {
+        sep_pos = backslash_pos;
+    }
+    header_filename = header_filename.substr(sep_pos + 1);
 
     // Figure out which types we need.
     bool uses_maybe = false;
@@ -714,7 +724,7 @@ int main(
     }
 
     // Generate the include guard name.
-    std::string include_guard = specification.header_filename;
+    std::string include_guard = header_filename;
     std::transform(
         include_guard.begin(), include_guard.end(), include_guard.begin(),
         [](unsigned char c){
@@ -843,7 +853,7 @@ int main(
     for (auto &include : specification.src_includes) {
         source << "#" << include << std::endl;
     }
-    source << "#include \"" << specification.header_filename << "\"" << std::endl;
+    source << "#include \"" << header_filename << "\"" << std::endl;
     source << std::endl;
     for (auto &name : specification.namespaces) {
         source << "namespace " << name << " {" << std::endl;

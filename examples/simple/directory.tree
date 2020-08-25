@@ -1,8 +1,9 @@
-// Set the names of the output files and attach \file docstrings for Doxygen.
+// Attach \file docstrings to the generated files for Doxygen.
 # Implementation for classes representing a Windows directory tree.
-source "directory.cpp"
+source
+
 # Header for classes representing a Windows directory tree.
-header "directory.hpp"
+header
 
 // Include tree base classes.
 include "tree-base.hpp"

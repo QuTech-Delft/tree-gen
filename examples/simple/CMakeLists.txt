@@ -3,7 +3,7 @@ if(CMAKE_VERSION VERSION_GREATER 3.0)
     CMAKE_POLICY(SET CMP0048 NEW)
 endif()
 
-project(libcqasm CXX)
+project(tree-gen-example CXX)
 
 # Add the tree-gen repository root directory. Normally, your project would be
 # located outside of tree-gen's root, which means you can omit the second

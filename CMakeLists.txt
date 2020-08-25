@@ -33,7 +33,7 @@ else()
 endif()
 flex_target(
     tree-gen-lexer
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.l"
+    "${CMAKE_CURRENT_SOURCE_DIR}/generator/lexer.l"
     "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp"
     COMPILE_FLAGS
         "--header-file=${CMAKE_CURRENT_BINARY_DIR}/lexer.hpp ${flex_win_compat}"
@@ -42,7 +42,7 @@ flex_target(
 # Generate the parser.
 bison_target(
     tree-gen-parser
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.y"
+    "${CMAKE_CURRENT_SOURCE_DIR}/generator/parser.y"
     "${CMAKE_CURRENT_BINARY_DIR}/parser.cpp"
     COMPILE_FLAGS
         "-rall --report-file=${CMAKE_CURRENT_BINARY_DIR}/parser.txt -Werror=conflicts-sr -Werror=conflicts-rr"
@@ -54,17 +54,17 @@ add_flex_bison_dependency(
     tree-gen-parser
 )
 
-# Generate the AST node class definitions.
+# Add rules for the tree-gen executable.
 add_executable(
     tree-gen
     ${BISON_tree-gen-parser_OUTPUTS}
     ${FLEX_tree-gen-lexer_OUTPUTS}
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-gen.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen.cpp"
 )
 
 target_include_directories(
     tree-gen
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/generator"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
@@ -81,7 +81,7 @@ function(generate_tree TREE HDR SRC)
 
     # Add a command to do the generation.
     add_custom_command(
-        COMMAND tree-gen "${TREE}" "${HDR_DIR}" "${SRC_DIR}"
+        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}"
         OUTPUT "${HDR}" "${SRC}"
         DEPENDS "${TREE}" tree-gen
     )

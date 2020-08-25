@@ -106,8 +106,8 @@ Node            : Documentation IDENT '{'                                       
                 ;
 
 Root            :                                                               {}
-                | Root Documentation SOURCE String                              { TRY specification.set_source(*$4, *$2); delete $2; delete $4; CATCH }
-                | Root Documentation HEADER String                              { TRY specification.set_header(*$4, *$2); delete $2; delete $4; CATCH }
+                | Root Documentation SOURCE                                     { TRY specification.set_source_doc(*$2); delete $2; CATCH }
+                | Root Documentation HEADER                                     { TRY specification.set_header_doc(*$2); delete $2; CATCH }
                 | Root TREE_NS Identifier                                       { TRY specification.set_tree_namespace(*$3); delete $3; CATCH }
                 | Root INIT_FN Identifier                                       { TRY specification.set_initialize_function(*$3); delete $3; CATCH }
                 | Root SOURCE_LOC Identifier                                    { TRY specification.set_source_location(*$3); delete $3; CATCH }
