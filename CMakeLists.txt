@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
-if(CMAKE_VERSION VERSION_GREATER 3.0)
-    CMAKE_POLICY(SET CMP0048 NEW)
-endif()
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 project(tree-gen CXX)
 
@@ -9,16 +6,98 @@ project(tree-gen CXX)
 # again. There should be only one place for it and one version per project.
 if(NOT TARGET tree-gen)
 
-# Require C++11 compiler support.
-if(CMAKE_VERSION VERSION_LESS "3.1")
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-    endif()
-else()
-    set(CMAKE_CXX_STANDARD 11)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS ON)
+# Loads up the appropriate directories for installing stuff.
+include(GNUInstallDirs)
+
+
+#=============================================================================#
+# Configuration options                                                       #
+#=============================================================================#
+
+# Library type option. Default is a shared object, because for CMake it doesn't
+# matter, but outside of CMake dependency information is lost for static
+# libraries. That requires the user to link all of ql's direct and transitive
+# dependencies as well, which is terribly ugly. setup.py *has* to do this
+# however, because "pip install ." builds this in a temporary directory, so the
+# shared objects that get built and installed and are then depended on by the
+# Python lib get deleted by pip after the install.
+option(
+    BUILD_SHARED_LIBS
+    "Whether libraries should be built as a shared object or as a static library"
+    ON
+)
+
+# Whether tests should be built.
+option(
+    TREE_GEN_BUILD_TESTS
+    "Whether the tests should be built and added to `make test`"
+    OFF
+)
+
+
+#=============================================================================#
+# CMake weirdness and compatibility                                           #
+#=============================================================================#
+
+# On Windows builds, CMake complains that the CMake internal variable
+# "CMAKE_MODULE_LINKER_FLAGS_MAINTAINER" is not defined *the first time you
+# configure*. Weirdly, all is good with the world if you then just try again.
+# It seems to have to do with the "maintainer" build type in MSVC, but there
+# is no documentation whatsoever. In any case, this just mimics what CMake
+# does automatically the second time you invoke it, so it works around the
+# issue.
+if(NOT DEFINED CMAKE_MODULE_LINKER_FLAGS_MAINTAINER)
+    set(
+        CMAKE_MODULE_LINKER_FLAGS_MAINTAINER ""
+        CACHE STRING "Flags used by the linker during the creation of modules during MAINTAINER builds."
+    )
 endif()
+
+
+#=============================================================================#
+# Global build configuration                                                  #
+#=============================================================================#
+
+# Since we have multiple libraries to link together, we unfortunately have to
+# worry about RPATH handling on Linux and OSX. See
+# https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+# Everything needs C++11 support.
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Windows weirdness: need a .lib file to link against a DLL at compile-time
+# (I think), but only the .dll is generated when there are no exported symbols.
+# This sort of fixes that (https://stackoverflow.com/questions/1941443)
+SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+
+#=============================================================================#
+# tree-lib support library target                                             #
+#=============================================================================#
+
+# Create the library.
+add_library(
+    tree-lib
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-cbor.cpp"
+)
+
+# Add the appropriate include paths.
+target_include_directories(
+    tree-lib
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+
+#=============================================================================#
+# tree-gen code generator tool                                                #
+#=============================================================================#
 
 # Require flex/bison; if not installed, this will try to build from source.
 set(FLEX_VERSION_REQUIRED 2.6.1)
@@ -88,9 +167,39 @@ function(generate_tree TREE HDR SRC)
 
 endfunction()
 
-# Install target.
+
+#=============================================================================#
+# Testing                                                                     #
+#=============================================================================#
+
+# Include the tests directory if requested.
+if(TREE_GEN_BUILD_TESTS)
+    enable_testing()
+
+    # Include the directories containing tests.
+    add_subdirectory(tests)
+
+endif()
+
+
+#=============================================================================#
+# Installation                                                                #
+#=============================================================================#
+
+# Install the support library.
+install(
+    TARGETS tree-lib
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
+install(
+    DIRECTORY "$<TARGET_PROPERTY:tree-lib,INTERFACE_INCLUDE_DIRECTORIES>"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
+# Install the generator tool only if this is the toplevel project.
 if (${CMAKE_PROJECT_NAME} STREQUAL tree-gen)
-    include(GNUInstallDirs)
     install(
         TARGETS tree-gen
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -101,5 +210,6 @@ if (${CMAKE_PROJECT_NAME} STREQUAL tree-gen)
         FILES_MATCHING PATTERN "*.hpp"
     )
 endif()
+
 
 endif() # NOT TARGET tree-gen

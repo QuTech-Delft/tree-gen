@@ -29,9 +29,9 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     # Binary directory for directory.hpp:
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
-    # Tree-gen public include directory for tree-*.hpp:
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
 )
+
+target_link_libraries(directory-example tree-lib)
 
 enable_testing()
 add_test(directory-example directory-example)
