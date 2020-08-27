@@ -466,7 +466,7 @@ bool Reader::is_array() const {
  * Reads the array item at the given offset into the array and advances the
  * offset past the item data.
  */
-void Reader::read_array_item(size_t &offset, std::vector<Reader> &ar) const {
+void Reader::read_array_item(size_t &offset, ArrayReader &ar) const {
     size_t start = offset;
     check_and_seek(offset);
     ar.push_back(slice(start, offset - start));
@@ -476,7 +476,7 @@ void Reader::read_array_item(size_t &offset, std::vector<Reader> &ar) const {
  * Returns the array representation of this slice. If it's not an array,
  * an unexpected value type error is thrown through a std::runtime_error.
  */
-std::vector<Reader> Reader::as_array() const {
+ArrayReader Reader::as_array() const {
     if (!is_array()) {
         throw std::runtime_error(
             "unexpected CBOR structure: expected array but found "
@@ -485,7 +485,7 @@ std::vector<Reader> Reader::as_array() const {
 
     uint8_t info = read_at(0) & 0x1Fu;
     size_t offset = 1;
-    std::vector<Reader> ar;
+    ArrayReader ar;
 
     if (info == 31) {
 
@@ -518,7 +518,7 @@ bool Reader::is_map() const {
  * Reads the map item at the given offset into the array and advances the
  * offset past the item data.
  */
-void Reader::read_map_item(size_t &offset, std::map<std::string, Reader> &map) const {
+void Reader::read_map_item(size_t &offset, MapReader &map) const {
     size_t key_start = offset;
     check_and_seek(offset);
     size_t data_start = offset;
@@ -532,7 +532,7 @@ void Reader::read_map_item(size_t &offset, std::map<std::string, Reader> &map) c
  * Returns the map/object representation of this slice. If it's not a map,
  * an unexpected value type error is thrown through a std::runtime_error.
  */
-std::map<std::string, Reader> Reader::as_map() const {
+MapReader Reader::as_map() const {
     if (!is_map()) {
         throw std::runtime_error(
             "unexpected CBOR structure: expected map but found "
@@ -541,7 +541,7 @@ std::map<std::string, Reader> Reader::as_map() const {
 
     uint8_t info = read_at(0) & 0x1Fu;
     size_t offset = 1;
-    std::map<std::string, Reader> map;
+    MapReader map;
 
     if (info == 31) {
 

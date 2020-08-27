@@ -19,6 +19,22 @@ namespace tree {
  */
 namespace cbor {
 
+// Forward declaration to Reader so we can do the ArrayReader and MapReader
+// typedefs.
+class Reader;
+
+/**
+ * Used to read a CBOR array. Use the at() method to query indices with bounds
+ * checking.
+ */
+using ArrayReader = std::vector<Reader>;
+
+/**
+ * Used to read a CBOR map. Use the at() method to query keys with bounds
+ * checking.
+ */
+using MapReader = std::map<std::string, Reader>;
+
 /**
  * Utility class for reading RFC7049 CBOR objects.
  */
@@ -203,7 +219,7 @@ private:
      * Reads the array item at the given offset into the array and advances the
      * offset past the item data.
      */
-    void read_array_item(size_t &offset, std::vector<Reader> &ar) const;
+    void read_array_item(size_t &offset, ArrayReader &ar) const;
 
 public:
 
@@ -211,7 +227,7 @@ public:
      * Returns the array representation of this slice. If it's not an array,
      * an unexpected value type error is thrown through a std::runtime_error.
      */
-    std::vector<Reader> as_array() const;
+    ArrayReader as_array() const;
 
     /**
      * Checks whether the object represented by this slice is a map/object.
@@ -224,7 +240,7 @@ private:
      * Reads the map item at the given offset into the array and advances the
      * offset past the item data.
      */
-    void read_map_item(size_t &offset, std::map<std::string, Reader> &map) const;
+    void read_map_item(size_t &offset, MapReader &map) const;
 
 public:
 
@@ -232,7 +248,7 @@ public:
      * Returns the map/object representation of this slice. If it's not a map,
      * an unexpected value type error is thrown through a std::runtime_error.
      */
-    std::map<std::string, Reader> as_map() const;
+    MapReader as_map() const;
 
     /**
      * Returns a copy of the CBOR slice in the form of a binary string.

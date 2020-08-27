@@ -11,4 +11,5 @@ function(add_tree_lib_test name source workdir)
     )
 endfunction()
 
-add_tree_lib_test(test_cbor test_cbor.cpp .)
+add_tree_lib_test(test-cbor test-cbor.cpp .)
+add_tree_lib_test(test-annotatable test-annotatable.cpp .)
