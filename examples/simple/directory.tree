@@ -61,4 +61,12 @@ entry {
 
     }
 
+    # Represents a link to another directory.
+    mount {
+
+        # The directory linked to.
+        target: Link<directory>;
+
+    }
+
 }

@@ -147,7 +147,10 @@ static void generate_base_class(
     format_doc(header, "Returns the `NodeType` of this node.", "    ");
     header << "    virtual NodeType type() const = 0;" << std::endl << std::endl;
 
-    format_doc(header, "Returns a copy of this node.", "    ");
+    format_doc(header, "Returns a shallow copy of this node.", "    ");
+    header << "    virtual One<Node> copy() const = 0;" << std::endl << std::endl;
+
+    format_doc(header, "Returns a deep copy of this node.", "    ");
     header << "    virtual One<Node> clone() const = 0;" << std::endl << std::endl;
 
     format_doc(header, "Equality operator. Ignores annotations!", "    ");
@@ -209,10 +212,12 @@ static void generate_node_class(
         }
         header << "    ";
         switch (child.type) {
-            case Maybe:   header << "Maybe<" << child.node_type->title_case_name << "> "; break;
-            case One:     header << "One<"   << child.node_type->title_case_name << "> "; break;
-            case Any:     header << "Any<"   << child.node_type->title_case_name << "> "; break;
-            case Many:    header << "Many<"  << child.node_type->title_case_name << "> "; break;
+            case Maybe:   header << "Maybe<"   << child.node_type->title_case_name << "> "; break;
+            case One:     header << "One<"     << child.node_type->title_case_name << "> "; break;
+            case Any:     header << "Any<"     << child.node_type->title_case_name << "> "; break;
+            case Many:    header << "Many<"    << child.node_type->title_case_name << "> "; break;
+            case OptLink: header << "OptLink<" << child.node_type->title_case_name << "> "; break;
+            case Link:    header << "Link<"    << child.node_type->title_case_name << "> "; break;
             case Prim:    header << child.prim_type << " "; break;
         }
         header << child.name << ";" << std::endl << std::endl;
@@ -231,19 +236,23 @@ static void generate_node_class(
             }
             header << "const ";
             switch (child.type) {
-                case Maybe: header << "Maybe<" << child.node_type->title_case_name << "> "; break;
-                case One:   header << "One<"   << child.node_type->title_case_name << "> "; break;
-                case Any:   header << "Any<"   << child.node_type->title_case_name << "> "; break;
-                case Many:  header << "Many<"  << child.node_type->title_case_name << "> "; break;
-                case Prim:  header << child.prim_type << " "; break;
+                case Maybe:   header << "Maybe<"   << child.node_type->title_case_name << "> "; break;
+                case One:     header << "One<"     << child.node_type->title_case_name << "> "; break;
+                case Any:     header << "Any<"     << child.node_type->title_case_name << "> "; break;
+                case Many:    header << "Many<"    << child.node_type->title_case_name << "> "; break;
+                case OptLink: header << "OptLink<" << child.node_type->title_case_name << "> "; break;
+                case Link:    header << "Link<"    << child.node_type->title_case_name << "> "; break;
+                case Prim:    header << child.prim_type << " "; break;
             }
             header << "&" << child.name << " = ";
             switch (child.type) {
-                case Maybe: header << "Maybe<" << child.node_type->title_case_name << ">()"; break;
-                case One:   header << "One<"   << child.node_type->title_case_name << ">()"; break;
-                case Any:   header << "Any<"   << child.node_type->title_case_name << ">()"; break;
-                case Many:  header << "Many<"  << child.node_type->title_case_name << ">()"; break;
-                case Prim:  header << initialize_function << "<" << child.prim_type << ">()"; break;
+                case Maybe:   header << "Maybe<"   << child.node_type->title_case_name << ">()"; break;
+                case One:     header << "One<"     << child.node_type->title_case_name << ">()"; break;
+                case Any:     header << "Any<"     << child.node_type->title_case_name << ">()"; break;
+                case Many:    header << "Many<"    << child.node_type->title_case_name << ">()"; break;
+                case OptLink: header << "OptLink<" << child.node_type->title_case_name << ">()"; break;
+                case Link:    header << "Link<"    << child.node_type->title_case_name << ">()"; break;
+                case Prim:    header << initialize_function << "<" << child.prim_type << ">()"; break;
             }
         }
         header << ");" << std::endl << std::endl;
@@ -259,11 +268,13 @@ static void generate_node_class(
             }
             source << "const ";
             switch (child.type) {
-                case Maybe: source << "Maybe<" << child.node_type->title_case_name << "> "; break;
-                case One:   source << "One<"   << child.node_type->title_case_name << "> "; break;
-                case Any:   source << "Any<"   << child.node_type->title_case_name << "> "; break;
-                case Many:  source << "Many<"  << child.node_type->title_case_name << "> "; break;
-                case Prim:  source << child.prim_type << " "; break;
+                case Maybe:   source << "Maybe<"   << child.node_type->title_case_name << "> "; break;
+                case One:     source << "One<"     << child.node_type->title_case_name << "> "; break;
+                case Any:     source << "Any<"     << child.node_type->title_case_name << "> "; break;
+                case Many:    source << "Many<"    << child.node_type->title_case_name << "> "; break;
+                case OptLink: source << "OptLink<" << child.node_type->title_case_name << "> "; break;
+                case Link:    source << "Link<"    << child.node_type->title_case_name << "> "; break;
+                case Prim:    source << child.prim_type << " "; break;
             }
             source << "&" << child.name;
         }
@@ -294,16 +305,38 @@ static void generate_node_class(
         source << std::endl << "{}" << std::endl << std::endl;
     }
 
-    // Print is_complete function.
+    // Print find_reachable and check_complete functions.
     if (node.derived.empty()) {
-        auto doc = "Returns whether this `" + node.title_case_name + "` is complete/fully defined.";
+        std::string doc = "Registers all reachable nodes with the given PointerMap.";
         format_doc(header, doc, "    ");
-        header << "    bool is_complete() const override;" << std::endl << std::endl;
+        header << "    void find_reachable(::tree::base::PointerMap &map) const override;" << std::endl << std::endl;
         format_doc(source, doc);
-        source << "bool " << node.title_case_name;
-        source << "::is_complete() const {" << std::endl;
+        source << "void " << node.title_case_name;
+        source << "::find_reachable(::tree::base::PointerMap &map) const {" << std::endl;
+        for (auto &child : all_children) {
+            switch (child.type) {
+                case Maybe:
+                case One:
+                case Any:
+                case Many:
+                case OptLink:
+                case Link:
+                    source << "    " << child.name << ".find_reachable(map);" << std::endl;
+                    break;
+                default:
+                    break;
+            }
+        }
+        source << "}" << std::endl << std::endl;
+
+        doc = "Returns whether this `" + node.title_case_name + "` is complete/fully defined.";
+        format_doc(header, doc, "    ");
+        header << "    void check_complete(const ::tree::base::PointerMap &map) const override;" << std::endl << std::endl;
+        format_doc(source, doc);
+        source << "void " << node.title_case_name;
+        source << "::check_complete(const ::tree::base::PointerMap &map) const {" << std::endl;
         if (node.is_error_marker) {
-            source << "    return false;" << std::endl;
+            source << "    throw ::tree::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
         } else {
             for (auto &child : all_children) {
                 switch (child.type) {
@@ -311,13 +344,14 @@ static void generate_node_class(
                     case One:
                     case Any:
                     case Many:
-                        source << "    if (!" << child.name << ".is_complete()) return false;" << std::endl;
+                    case OptLink:
+                    case Link:
+                        source << "    " << child.name << ".check_complete(map);" << std::endl;
                         break;
                     default:
                         break;
                 }
             }
-            source << "    return true;" << std::endl;
         }
         source << "}" << std::endl << std::endl;
     }
@@ -334,9 +368,25 @@ static void generate_node_class(
         source << "}" << std::endl << std::endl;
     }
 
+    // Print copy method.
+    if (node.derived.empty()) {
+        auto doc = "Returns a shallow copy of this node.";
+        format_doc(header, doc, "    ");
+        header << "    One<Node> copy() const override;" << std::endl << std::endl;
+        format_doc(source, doc);
+        source << "One<Node> " << node.title_case_name;
+        source << "::copy() const {" << std::endl;
+        source << "    return ";
+        if (!tree_namespace.empty()) {
+            source << tree_namespace << "::";
+        }
+        source << "make<" << node.title_case_name << ">(*this);" << std::endl;
+        source << "}" << std::endl << std::endl;
+    }
+
     // Print clone method.
     if (node.derived.empty()) {
-        auto doc = "Returns a copy of this node.";
+        auto doc = "Returns a deep copy of this node.";
         format_doc(header, doc, "    ");
         header << "    One<Node> clone() const override;" << std::endl << std::endl;
         format_doc(source, doc);
@@ -346,7 +396,39 @@ static void generate_node_class(
         if (!tree_namespace.empty()) {
             source << tree_namespace << "::";
         }
-        source << "make<" << node.title_case_name << ">(*this);" << std::endl;
+        source << "make<" << node.title_case_name << ">(" << std::endl;
+        bool first = true;
+        for (auto &child : all_children) {
+            if (first) {
+                first = false;
+            } else {
+                source << "," << std::endl;
+            }
+            source << "        " << child.name;
+            switch (child.type) {
+                case Maybe:
+                case One:
+                case Any:
+                case Many:
+                    source << ".clone()";
+                    break;
+                case Prim:
+                    switch (child.ext_type) {
+                        case Maybe:
+                        case One:
+                        case Any:
+                        case Many:
+                            source << ".clone()";
+                            break;
+                        default:
+                            break;
+                    }
+                default:
+                    break;
+            }
+        }
+        source << std::endl;
+        source << "    );" << std::endl;
         source << "}" << std::endl << std::endl;
     }
 
@@ -505,6 +587,8 @@ static void generate_dumper_class(
     header << "    std::ostream &out;" << std::endl << std::endl;
     format_doc(header, "Current indentation level.", "    ");
     header << "    int indent = 0;" << std::endl << std::endl;
+    format_doc(header, "Whether we're printing the contents of a link.", "    ");
+    header << "    bool in_link = false;" << std::endl << std::endl;
 
     // Print function that prints indentation level.
     format_doc(header, "Writes the current indentation level's worth of spaces.", "    ");
@@ -542,9 +626,6 @@ static void generate_dumper_class(
         source << "(" << node->title_case_name << " &node) {" << std::endl;
         source << "    write_indent();" << std::endl;
         auto children = node->all_children();
-        source << "    if (!node.is_complete()) {" << std::endl;
-        source << "        out << \"!\";" << std::endl;
-        source << "    }" << std::endl;
         source << "    out << \"" << node->title_case_name << "(\";" << std::endl;
         if (!source_location.empty()) {
             source << "    if (auto loc = node.get_annotation_ptr<" << source_location << ">()) {" << std::endl;
@@ -556,12 +637,20 @@ static void generate_dumper_class(
             source << "    indent++;" << std::endl;
             for (auto &child : children) {
                 source << "    write_indent();" << std::endl;
-                source << "    out << \"" << child.name << ": \";" << std::endl;
+                source << "    out << \"" << child.name;
+                if (child.type == Link || child.type == OptLink) {
+                    source << " --> ";
+                } else {
+                    source << ": ";
+                }
+                source << "\";" << std::endl;
                 switch (child.ext_type) {
                     case Maybe:
                     case One:
+                    case OptLink:
+                    case Link:
                         source << "    if (node." << child.name << ".empty()) {" << std::endl;
-                        if (child.type == One) {
+                        if (child.type == One || child.type == Link) {
                             source << "        out << \"!MISSING\" << std::endl;" << std::endl;
                         } else {
                             source << "        out << \"-\" << std::endl;" << std::endl;
@@ -572,6 +661,15 @@ static void generate_dumper_class(
                         if (child.type == Prim) {
                             source << "        if (!node." << child.name << ".empty()) {" << std::endl;
                             source << "            node." << child.name << "->dump(out, indent);" << std::endl;
+                            source << "        }" << std::endl;
+                        } else if (child.type == Link || child.type == OptLink) {
+                            source << "        if (!in_link) {" << std::endl;
+                            source << "            in_link = true;" << std::endl;
+                            source << "            node." << child.name << ".visit(*this);" << std::endl;
+                            source << "            in_link = false;" << std::endl;
+                            source << "        } else {" << std::endl;
+                            source << "            write_indent();" << std::endl;
+                            source << "            out << \"...\" << std::endl;" << std::endl;
                             source << "        }" << std::endl;
                         } else {
                             source << "        node." << child.name << ".visit(*this);" << std::endl;
@@ -706,23 +804,6 @@ int main(
     }
     header_filename = header_filename.substr(sep_pos + 1);
 
-    // Figure out which types we need.
-    bool uses_maybe = false;
-    bool uses_one = true; // clone() uses it now
-    bool uses_any = false;
-    bool uses_many = false;
-    for (auto &node : nodes) {
-        for (auto &child : node->children) {
-            switch (child.type) {
-                case Maybe: uses_maybe = true; break;
-                case One:   uses_one   = true; break;
-                case Any:   uses_any   = true; break;
-                case Many:  uses_many  = true; break;
-                default: ;
-            }
-        }
-    }
-
     // Generate the include guard name.
     std::string include_guard = header_filename;
     std::transform(
@@ -782,7 +863,7 @@ int main(
             int prim_id = 0;
             for (auto &node : nodes) {
                 for (auto child : node->children) {
-                    ChildType typ;
+                    AttributeType typ;
                     if (child.node_type) {
                         header << " *   " << node->title_case_name;
                         header << " -> " << child.node_type->title_case_name;
@@ -816,9 +897,11 @@ int main(
                     }
                     header << " [ label=\"" << child.name;
                     switch (typ) {
-                        case Maybe: header << "?\", arrowhead=open, style=dashed, "; break;
                         case Any: header << "*\", arrowhead=open, style=bold, "; break;
+                        case OptLink: header << "@?\", arrowhead=open, style=dashed, "; break;
+                        case Maybe: header << "?\", arrowhead=open, style=solid, "; break;
                         case Many: header << "+\", arrowhead=normal, style=bold, "; break;
+                        case Link: header << "@\", arrowhead=normal, style=dashed, "; break;
                         default: header << "\", arrowhead=normal, style=solid, "; break;
                     }
                     header << "fontname=Helvetica, fontsize=10];" << std::endl;
@@ -832,18 +915,22 @@ int main(
         header << "namespace " << specification.namespaces[i] << " {" << std::endl;
     }
     header << std::endl;
-    header << "// Base classes used to construct the tree." << std::endl;
+
+    // Determine the namespace that the base and edge classes are defined in.
+    // If it's not the current namespace, pull the types into it using typedefs.
     std::string tree_namespace = "";
     if (!specification.tree_namespace.empty()) {
-        tree_namespace = "::" + specification.tree_namespace + "::";
+        tree_namespace = specification.tree_namespace + "::";
+        header << "// Base classes used to construct the tree." << std::endl;
+        header << "using Base = " << tree_namespace << "Base;" << std::endl;
+        header << "template <class T> using Maybe   = " << tree_namespace << "Maybe<T>;" << std::endl;
+        header << "template <class T> using One     = " << tree_namespace << "One<T>;" << std::endl;
+        header << "template <class T> using Any     = " << tree_namespace << "Any<T>;" << std::endl;
+        header << "template <class T> using Many    = " << tree_namespace << "Many<T>;" << std::endl;
+        header << "template <class T> using OptLink = " << tree_namespace << "OptLink<T>;" << std::endl;
+        header << "template <class T> using Link    = " << tree_namespace << "Link<T>;" << std::endl;
+        header << std::endl;
     }
-
-    header << "using Base = " << tree_namespace << "Base;" << std::endl;
-    if (uses_maybe)    header << "template <class T> using Maybe = " << tree_namespace << "Maybe<T>;" << std::endl;
-    if (uses_one)      header << "template <class T> using One   = " << tree_namespace << "One<T>;" << std::endl;
-    if (uses_any)      header << "template <class T> using Any   = " << tree_namespace << "Any<T>;" << std::endl;
-    if (uses_many)     header << "template <class T> using Many  = " << tree_namespace << "Many<T>;" << std::endl;
-    header << std::endl;
 
     // Header for the source file.
     if (!specification.source_doc.empty()) {

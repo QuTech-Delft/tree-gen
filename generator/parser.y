@@ -65,10 +65,10 @@
 /* Tokens */
 %token <str> DOCSTRING
 %token <str> INCLUDE SRC_INCLUDE
-%token SOURCE HEADER TREE_NS INIT_FN SOURCE_LOC
+%token SOURCE HEADER TREE_NS INIT_FN SERDES_FNS SOURCE_LOC
 %token NAMESPACE NAMESPACE_SEP
 %token ERROR
-%token MAYBE ONE ANY MANY EXT
+%token MAYBE ONE ANY MANY OLINK LINK EXT
 %token <str> IDENT
 %token <str> STRING
 %token '{' '}' '<' '>' ':' ';'
@@ -97,10 +97,14 @@ Node            : Documentation IDENT '{'                                       
                 | Node Documentation IDENT ':' ONE '<' Identifier '>' ';'       { TRY $$ = $1->with_child(tree_gen::One, *$7, std::string($3), *$2); delete $2; std::free($3); delete $7; CATCH }
                 | Node Documentation IDENT ':' ANY '<' Identifier '>' ';'       { TRY $$ = $1->with_child(tree_gen::Any, *$7, std::string($3), *$2); delete $2; std::free($3); delete $7; CATCH }
                 | Node Documentation IDENT ':' MANY '<' Identifier '>' ';'      { TRY $$ = $1->with_child(tree_gen::Many, *$7, std::string($3), *$2); delete $2; std::free($3); delete $7; CATCH }
+                | Node Documentation IDENT ':' OLINK '<' Identifier '>' ';'     { TRY $$ = $1->with_child(tree_gen::OptLink, *$7, std::string($3), *$2); delete $2; std::free($3); delete $7; CATCH }
+                | Node Documentation IDENT ':' LINK '<' Identifier '>' ';'      { TRY $$ = $1->with_child(tree_gen::Link, *$7, std::string($3), *$2); delete $2; std::free($3); delete $7; CATCH }
                 | Node Documentation IDENT ':' EXT MAYBE '<' Identifier '>' ';' { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::Maybe); delete $2; std::free($3); delete $8; CATCH }
                 | Node Documentation IDENT ':' EXT ONE '<' Identifier '>' ';'   { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::One); delete $2; std::free($3); delete $8; CATCH }
                 | Node Documentation IDENT ':' EXT ANY '<' Identifier '>' ';'   { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::Any); delete $2; std::free($3); delete $8; CATCH }
                 | Node Documentation IDENT ':' EXT MANY '<' Identifier '>' ';'  { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::Many); delete $2; std::free($3); delete $8; CATCH }
+                | Node Documentation IDENT ':' EXT OLINK '<' Identifier '>' ';' { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::OptLink); delete $2; std::free($3); delete $8; CATCH }
+                | Node Documentation IDENT ':' EXT LINK '<' Identifier '>' ';'  { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::Link); delete $2; std::free($3); delete $8; CATCH }
                 | Node Documentation IDENT ':' Identifier ';'                   { TRY $$ = $1->with_prim(*$5, std::string($3), *$2, tree_gen::Prim); delete $2; std::free($3); delete $5; CATCH }
                 | Node Node '}'                                                 { TRY $2->derive_from($1->node); CATCH }
                 ;
@@ -110,6 +114,7 @@ Root            :                                                               
                 | Root Documentation HEADER                                     { TRY specification.set_header_doc(*$2); delete $2; CATCH }
                 | Root TREE_NS Identifier                                       { TRY specification.set_tree_namespace(*$3); delete $3; CATCH }
                 | Root INIT_FN Identifier                                       { TRY specification.set_initialize_function(*$3); delete $3; CATCH }
+                | Root SERDES_FNS Identifier Identifier                         { TRY specification.set_serdes_functions(*$3, *$4); delete $3; delete $4; CATCH }
                 | Root SOURCE_LOC Identifier                                    { TRY specification.set_source_location(*$3); delete $3; CATCH }
                 | Root INCLUDE                                                  { TRY specification.add_include(std::string($2)); std::free($2); CATCH }
                 | Root SRC_INCLUDE                                              { TRY specification.add_src_include(std::string($2 + 4)); std::free($2); CATCH }

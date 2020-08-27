@@ -54,6 +54,7 @@ source                                              WITHOUT_STR(SOURCE);
 header                                              WITHOUT_STR(HEADER);
 tree_namespace                                      WITHOUT_STR(TREE_NS);
 initialize_function                                 WITHOUT_STR(INIT_FN);
+serdes_functions                                    WITHOUT_STR(SERDES_FNS);
 location                                            WITHOUT_STR(SOURCE_LOC);
 include.*                                           WITH_STR(INCLUDE);
 src_include.*                                       WITH_STR(SRC_INCLUDE);
@@ -65,11 +66,13 @@ namespace                                           WITHOUT_STR(NAMESPACE);
     /* Error marker keyword */
 error                                               WITHOUT_STR(ERROR);
 
-    /* Child node types/multiplicities */
+    /* Edge types */
 Maybe                                               WITHOUT_STR(MAYBE);
 One                                                 WITHOUT_STR(ONE);
 Any                                                 WITHOUT_STR(ANY);
 Many                                                WITHOUT_STR(MANY);
+OptLink                                             WITHOUT_STR(OLINK);
+Link                                                WITHOUT_STR(LINK);
 
     /* External node (typedef'd multiplicity thing from another tree) */
 external                                            WITHOUT_STR(EXT);
