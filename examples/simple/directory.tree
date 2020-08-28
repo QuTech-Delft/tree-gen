@@ -15,6 +15,7 @@ include "primitives.hpp"
 // Initialization function to use to construct default values for the tree base
 // classes and primitives.
 initialize_function primitives::initialize
+serdes_functions primitives::serialize primitives::deserialize
 
 // Set the namespace for the generated classes and attach a docstring.
 # Namespace for classes representing a Windows directory tree.

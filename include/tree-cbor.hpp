@@ -70,11 +70,6 @@ public:
      */
     explicit Reader(std::string &&data);
 
-    /**
-     * Loads the given CBOR file and turns it into a CborReader for parsing.
-     */
-    static Reader from_file(const std::string &&filename);
-
 private:
 
     /**
@@ -270,9 +265,9 @@ class StructureWriter {
 private:
 
     /**
-     * Reference to the Writer object we belong to.
+     * Pointer to the Writer object we belong to.
      */
-    Writer &writer;
+    Writer *writer;
 
     /**
      * Our identifier as given by the Writer at construction time. If our ID is
@@ -346,6 +341,17 @@ public:
      * assumes close() was called manually if not.
      */
     virtual ~StructureWriter();
+
+    // Delete copy constructor; deletion of one of these objects closes the
+    // structure, so any copies would become invalid.
+    StructureWriter(StructureWriter &src) = delete;
+    StructureWriter &operator=(const StructureWriter &src) = delete;
+
+    // Move constructor/assignment is fine though. The original will be made
+    // invalid by clearing the ID field, so it doesn't close the structure upon
+    // deletion.
+    StructureWriter(StructureWriter &&src);
+    StructureWriter &operator=(StructureWriter &&src);
 
     /**
      * Terminates the structure that we were writing with a break code, and

@@ -11,8 +11,10 @@
 #include <unordered_map>
 #include <functional>
 #include <sstream>
+#include <fstream>
 #include "tree-compat.hpp"
 #include "tree-annotatable.hpp"
+#include "tree-cbor.hpp"
 
 namespace tree {
 
@@ -30,6 +32,7 @@ template <class T>
 class Any;
 template <class T>
 class Many;
+class LinkBase;
 template <class T>
 class OptLink;
 template <class T>
@@ -44,9 +47,9 @@ public:
 };
 
 /**
- * Helper class used to assign unique, stable numbers the nodes in a tree, and
- * to check for well-formedness in terms of lack of duplicate nodes and dead
- * links.
+ * Helper class used to assign unique, stable numbers the nodes in a tree for
+ * serialization and well-formedness checks in terms of lack of duplicate nodes
+ * and dead links.
  */
 class PointerMap {
 private:
@@ -91,6 +94,43 @@ public:
      */
     template <class T>
     size_t get(const OptLink<T> &ob) const;
+
+};
+
+/**
+ * Helper class for mapping the identifiers stored with One/Maybe edges in a
+ * serialized tree to the constructed shared_ptrs, such that (Opt)Link edges can
+ * be restored once the tree is rebuilt.
+ */
+class IdentifierMap {
+private:
+
+    /**
+     * Map from identifier to node.
+     */
+    std::unordered_map<size_t, std::shared_ptr<void>> nodes;
+
+    /**
+     * List of links registered for restoration.
+     */
+    std::vector<std::pair<LinkBase&, size_t>> links;
+
+public:
+
+    /**
+     * Registers a constructed node.
+     */
+    void register_node(size_t identifier, const std::shared_ptr<void> &ptr);
+
+    /**
+     * Registers a constructed link.
+     */
+    void register_link(LinkBase &link, size_t identifier);
+
+    /**
+     * Restores all the links after the tree finishes constructing.
+     */
+    void restore_links() const;
 
 };
 
@@ -369,14 +409,14 @@ public:
     }
 
     /**
-     * Makes a shallow copy of this value.
+     * Visit this object.
      */
-    One<T> copy() const;
-
-    /**
-     * Makes a deep copy of this value.
-     */
-    One<T> clone() const;
+    template <class V>
+    void visit(V &visitor) {
+        if (val) {
+            val->visit(visitor);
+        }
+    }
 
     /**
      * Equality operator.
@@ -426,13 +466,70 @@ public:
     }
 
     /**
-     * Visit this object.
+     * Makes a shallow copy of this subtree.
      */
-    template <class V>
-    void visit(V &visitor) {
-        if (val) {
-            val->visit(visitor);
+    One<T> copy() const;
+
+    /**
+     * Makes a deep copy of this subtree. Note that links are not modified; if
+     * you want to completely clone a full tree that contains links you'll have
+     * to use serdes or relink all links yourself.
+     */
+    One<T> clone() const;
+
+protected:
+
+    /**
+     * Returns the value for the `@T` tag.
+     */
+    virtual std::string serdes_edge_type() const {
+        return "?";
+    }
+
+    /**
+     * Deserializes the subtree corresponding to the given map, and registers
+     * the nodes encountered with the IdentifierMap. Any existing tree contained
+     * by the Maybe is overridden.
+     */
+    void deserialize(const cbor::MapReader &map, IdentifierMap &ids) {
+        // Note: this is in a function rather than in the constructor, because
+        // serdes_edge_type() would map to the base class if we just chain
+        // constructors, and we don't want to repeat this whole mess for One.
+        if (map.at("@T").as_string() != serdes_edge_type()) {
+            throw std::runtime_error("Schema validation failed: unexpected edge type");
         }
+        auto type = map.at("@t");
+        if (type.is_null()) {
+            val.reset();
+        } else {
+            val = T::deserialize(map, ids);
+            ids.register_node(map.at("@i").as_int(), std::static_pointer_cast<void>(val));
+        }
+    }
+
+public:
+
+    /**
+     * Serializes the subtree that this edge points to. Note that this is only
+     * available when the contained tree is generated with serialization
+     * support.
+     */
+    void serialize(cbor::MapWriter &map, const PointerMap &ids) const {
+        map.append_string("@T", serdes_edge_type());
+        map.append_int("@i", ids.get(*this));
+        if (val) {
+            val->serialize(map, ids);
+        } else {
+            map.append_null("@t");
+        }
+    }
+
+    /**
+     * Deserializes the subtree corresponding to the given map, and registers
+     * the nodes encountered with the IdentifierMap.
+     */
+    Maybe(const cbor::MapReader &map, IdentifierMap &ids) : val() {
+        deserialize(map, ids);
     }
 
 };
@@ -492,6 +589,25 @@ public:
         this->val->check_complete(map);
     }
 
+protected:
+
+    /**
+     * Returns the value for the `@T` tag.
+     */
+    std::string serdes_edge_type() const override {
+        return "1";
+    }
+
+public:
+
+    /**
+     * Deserializes the subtree corresponding to the given map, and registers
+     * the nodes encountered with the IdentifierMap.
+     */
+    One(const cbor::MapReader &map, IdentifierMap &ids) : Maybe<T>() {
+        this->deserialize(map, ids);
+    }
+
 };
 
 /**
@@ -539,6 +655,11 @@ protected:
     std::vector<One<T>> vec;
 
 public:
+
+    /**
+     * Constructs an empty Any.
+     */
+    Any() = default;
 
     /**
      * Adds the given value. No-op when the value is empty.
@@ -702,14 +823,16 @@ public:
     }
 
     /**
-     * Makes a shallow copy of these values.
+     * Visit this object.
      */
-    virtual Many<T> copy() const;
-
-    /**
-     * Makes a deep copy of these values.
-     */
-    virtual Many<T> clone() const;
+    template <class V>
+    void visit(V &visitor) {
+        for (auto &sptr : this->vec) {
+            if (!sptr.empty()) {
+                sptr->visit(visitor);
+            }
+        }
+    }
 
     /**
      * Equality operator.
@@ -754,15 +877,63 @@ public:
     }
 
     /**
-     * Visit this object.
+     * Makes a shallow copy of these values.
      */
-    template <class V>
-    void visit(V &visitor) {
-        for (auto &sptr : this->vec) {
-            if (!sptr.empty()) {
-                sptr->visit(visitor);
-            }
+    Many<T> copy() const;
+
+    /**
+     * Makes a deep copy of these values.
+     */
+    Many<T> clone() const;
+
+protected:
+
+    /**
+     * Returns the value for the `@T` tag.
+     */
+    virtual std::string serdes_edge_type() const {
+        return "*";
+    }
+
+    /**
+     * Deserializes the subtrees corresponding to the given map, and registers
+     * the nodes encountered with the IdentifierMap. The subtrees are appended
+     * to the back of the Any.
+     */
+    void deserialize(const cbor::MapReader &map, IdentifierMap &ids) {
+        // Note: this is in a function rather than in the constructor, because
+        // serdes_edge_type() would map to the base class if we just chain
+        // constructors, and we don't want to repeat this whole mess for Many.
+        if (map.at("@T").as_string() != serdes_edge_type()) {
+            throw std::runtime_error("Schema validation failed: unexpected edge type");
         }
+        for (const auto &it : map.at("@d").as_array()) {
+            vec.emplace_back(it.as_map(), ids);
+        }
+    }
+
+public:
+
+    /**
+     * Serializes the subtrees that this edge points to. Note that this is only
+     * available when the contained tree is generated with serialization
+     * support.
+     */
+    void serialize(cbor::MapWriter &map, const PointerMap &ids) const {
+        map.append_string("@T", serdes_edge_type());
+        auto ar = map.append_array("@d");
+        for (auto &sptr : this->vec) {
+            auto submap = ar.append_map();
+            sptr.serialize(submap, ids);
+        }
+    }
+
+    /**
+     * Deserializes the subtree corresponding to the given map, and registers
+     * the nodes encountered with the IdentifierMap.
+     */
+    Any(const cbor::MapReader &map, IdentifierMap &ids) : vec() {
+        deserialize(map, ids);
     }
 
 };
@@ -773,6 +944,11 @@ public:
 template <class T>
 class Many : public Any<T> {
 public:
+
+    /**
+     * Constructs an empty Many.
+     */
+    Many() = default;
 
     /**
      * Checks completeness of this node given a map of raw, internal Node
@@ -793,13 +969,70 @@ public:
         Any<T>::check_complete(map);
     }
 
+protected:
+
+    /**
+     * Returns the value for the `@T` tag.
+     */
+    std::string serdes_edge_type() const override {
+        return "+";
+    }
+
+public:
+
+    /**
+     * Deserializes the subtrees corresponding to the given map, and registers
+     * the nodes encountered with the IdentifierMap.
+     */
+    Many(const cbor::MapReader &map, IdentifierMap &ids) : Any<T>() {
+        this->deserialize(map, ids);
+    }
+
+};
+
+/**
+ * Makes a shallow copy of these values.
+ */
+template <class T>
+Many<T> Any<T>::copy() const {
+    Many<T> c{};
+    for (auto &sptr : this->vec) {
+        c.add(sptr.copy());
+    }
+    return c;
+}
+
+/**
+ * Makes a deep copy of these values.
+ */
+template <class T>
+Many<T> Any<T>::clone() const {
+    Many<T> c{};
+    for (auto &sptr : this->vec) {
+        c.add(sptr.clone());
+    }
+    return c;
+}
+
+/**
+ * Helper interface class for restoring links after deserialization.
+ */
+class LinkBase : public Completable {
+protected:
+    friend class IdentifierMap;
+
+    /**
+     * Restores a link after deserialization.
+     */
+    virtual void set_void_ptr(const std::shared_ptr<void> &ptr) = 0;
+
 };
 
 /**
  * Convenience class for a reference to an optional tree node.
  */
 template <class T>
-class OptLink : public Completable {
+class OptLink : public LinkBase {
 protected:
 
     /**
@@ -966,16 +1199,20 @@ public:
     }
 
     /**
+     * Visit this object.
+     */
+    template <class V>
+    void visit(V &visitor) {
+        if (!val.expired()) {
+            val.lock()->visit(visitor);
+        }
+    }
+
+    /**
      * Equality operator.
      */
     bool operator==(const OptLink& rhs) const {
-        auto lhs_ptr = get_ptr();
-        auto rhs_ptr = rhs.get_ptr();
-        if (lhs_ptr && rhs_ptr) {
-            return *lhs_ptr == *rhs_ptr;
-        } else {
-            return lhs_ptr == rhs_ptr;
-        }
+        return get_ptr() == rhs.get_ptr();
     }
 
     /**
@@ -1018,41 +1255,57 @@ public:
         }
     }
 
+protected:
+
     /**
-     * Visit this object.
+     * Returns the value for the `@T` tag.
      */
-    template <class V>
-    void visit(V &visitor) {
-        if (!val.expired()) {
-            val.lock()->visit(visitor);
+    virtual std::string serdes_edge_type() const {
+        return "@";
+    }
+
+    /**
+     * Restores a link after deserialization.
+     */
+    void set_void_ptr(const std::shared_ptr<void> &ptr) override {
+        val = std::static_pointer_cast<T>(ptr);
+    }
+
+    /**
+     * Constructs a link, checking whether the edge type of the serialized link
+     * is correct. The link is NOT registered with the IdentifierMap, because
+     * the this pointer is still on the stack at this point and not in the
+     * actual tree yet.
+     */
+    void deserialize(const cbor::MapReader &map, IdentifierMap &ids) {
+        // Note: this is in a function rather than in the constructor, because
+        // serdes_edge_type() would map to the base class if we just chain
+        // constructors, and we don't want to repeat this whole mess for Many.
+        if (map.at("@T").as_string() != serdes_edge_type()) {
+            throw std::runtime_error("Schema validation failed: unexpected edge type");
         }
+        val.reset();
+    }
+
+public:
+
+    /**
+     * Serializes this link.
+     */
+    void serialize(cbor::MapWriter &map, const PointerMap &ids) const {
+        map.append_string("@T", serdes_edge_type());
+        map.append_int("@l", ids.get(*this));
+    }
+
+    /**
+     * Constructs a link and registers it with the IdentifierMap to be linked up
+     * once the rest of the tree finishes constructing.
+     */
+    OptLink(const cbor::MapReader &map, IdentifierMap &ids) : val() {
+        deserialize(map, ids);
     }
 
 };
-
-/**
- * Makes a shallow copy of these values.
- */
-template <class T>
-Many<T> Any<T>::copy() const {
-    Many<T> c{};
-    for (auto &sptr : this->vec) {
-        c.add(sptr.copy());
-    }
-    return c;
-}
-
-/**
- * Makes a deep copy of these values.
- */
-template <class T>
-Many<T> Any<T>::clone() const {
-    Many<T> c{};
-    for (auto &sptr : this->vec) {
-        c.add(sptr.clone());
-    }
-    return c;
-}
 
 /**
  * Convenience class for a reference to exactly one other tree node.
@@ -1109,6 +1362,25 @@ public:
         map.get(*this);
     }
 
+protected:
+
+    /**
+     * Returns the value for the `@T` tag.
+     */
+    std::string serdes_edge_type() const override {
+        return "$";
+    }
+
+public:
+
+    /**
+     * Constructs a link and registers it with the IdentifierMap to be linked up
+     * once the rest of the tree finishes constructing.
+     */
+    Link(const cbor::MapReader &map, IdentifierMap &ids) : OptLink<T>() {
+        this->deserialize(map, ids);
+    }
+
 };
 
 /**
@@ -1136,6 +1408,69 @@ size_t PointerMap::get(const Maybe<T> &ob) const {
 template <class T>
 size_t PointerMap::get(const OptLink<T> &ob) const {
     return get_raw(reinterpret_cast<const void*>(ob.get_ptr().get()), typeid(T).name());
+}
+
+/**
+ * Entry point for tree serialization to a stream.
+ */
+template <class T>
+void serialize(const Maybe<T> tree, std::ostream &stream) {
+    tree::cbor::Writer writer{stream};
+    PointerMap ids{};
+    tree.find_reachable(ids);
+    tree.check_complete(ids);
+    auto map = writer.start();
+    tree.serialize(map, ids);
+    map.close();
+}
+
+/**
+ * Entry point for tree serialization to a string.
+ */
+template <class T>
+std::string serialize(const Maybe<T> tree) {
+    std::ostringstream stream{};
+    serialize<T>(tree, stream);
+    return stream.str();
+}
+
+/**
+ * Entry point for tree serialization to a file.
+ */
+template <class T>
+void serialize_file(const Maybe<T> tree, const std::string &filename) {
+    serialize<T>(tree, std::ofstream(filename));
+}
+
+/**
+ * Entry point for tree deserialization from a string.
+ */
+template <class T>
+Maybe<T> deserialize(const std::string &cbor) {
+    cbor::Reader reader{cbor};
+    IdentifierMap ids{};
+    Maybe<T> tree{reader.as_map(), ids};
+    ids.restore_links();
+    tree.check_well_formed();
+    return tree;
+}
+
+/**
+ * Entry point for tree deserialization from a stream.
+ */
+template <class T>
+Maybe<T> deserialize(std::istream &stream) {
+    std::ostringstream ss;
+    ss << stream.rdbuf();
+    return deserialize<T>(ss.str());
+}
+
+/**
+ * Entry point for tree deserialization from a file.
+ */
+template <class T>
+Maybe<T> deserialize_file(const std::string &&filename) {
+    return deserialize<T>(std::ifstream(filename));
 }
 
 } // namespace base

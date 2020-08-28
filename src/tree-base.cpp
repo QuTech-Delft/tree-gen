@@ -35,6 +35,29 @@ size_t PointerMap::get_raw(const void *ptr, const char *name) const {
 }
 
 /**
+ * Registers a constructed node.
+ */
+void IdentifierMap::register_node(size_t identifier, const std::shared_ptr<void> &ptr) {
+    nodes.emplace(identifier, ptr);
+}
+
+/**
+ * Registers a constructed link.
+ */
+void IdentifierMap::register_link(LinkBase &link, size_t identifier) {
+    links.emplace_back(link, identifier);
+}
+
+/**
+ * Restores all the links after the tree finishes constructing.
+ */
+void IdentifierMap::restore_links() const {
+    for (auto &it : links) {
+        it.first.set_void_ptr(nodes.at(it.second));
+    }
+}
+
+/**
  * Checks whether the tree starting at this node is well-formed. That is:
  *  - all One, Link, and Many edges have (at least) one entry;
  *  - all the One entries internally stored by Any/Many have an entry;

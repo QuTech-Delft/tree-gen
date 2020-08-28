@@ -29,15 +29,6 @@ Reader::Reader(std::string &&data) :
 }
 
 /**
- * Loads the given CBOR file and turns it into a CborReader for parsing.
- */
-Reader Reader::from_file(const std::string &&filename) {
-    std::ostringstream ss;
-    ss << std::ifstream(filename).rdbuf();
-    return Reader(ss.str());
-}
-
-/**
  * Constructs a subslice of this slice.
  */
 Reader::Reader(const Reader &parent, size_t offs, size_t len) :
@@ -574,7 +565,7 @@ std::string Reader::get_contents() const {
  * Constructs a structure writer and makes it the active writer.
  */
 StructureWriter::StructureWriter(Writer &writer) :
-    writer(writer),
+    writer(&writer),
     id(writer.id_counter)
 {
     writer.stack.push(id);
@@ -586,10 +577,10 @@ StructureWriter::StructureWriter(Writer &writer) :
  * the active writer. Otherwise an exception is thrown.
  */
 std::ostream &StructureWriter::stream() {
-    if (writer.stack.empty() || writer.stack.top() != id) {
+    if (!writer || writer->stack.empty() || writer->stack.top() != id) {
         throw std::runtime_error("Attempt to write to CBOR object using inactive writer");
     }
-    return writer.stream;
+    return writer->stream;
 }
 
 /**
@@ -694,7 +685,7 @@ void StructureWriter::write_binary(const std::string &value) {
 ArrayWriter StructureWriter::write_array() {
     // Ensure that we're allowed to write.
     stream();
-    return ArrayWriter(writer);
+    return ArrayWriter(*writer);
 }
 
 /**
@@ -705,7 +696,7 @@ ArrayWriter StructureWriter::write_array() {
 MapWriter StructureWriter::write_map() {
     // Ensure that we're allowed to write.
     stream();
-    return MapWriter(writer);
+    return MapWriter(*writer);
 }
 
 /**
@@ -713,9 +704,30 @@ MapWriter StructureWriter::write_map() {
  * assumes close() was called manually if not.
  */
 StructureWriter::~StructureWriter() {
-    if (!writer.stack.empty() && writer.stack.top() == id) {
+    if (writer && !writer->stack.empty() && writer->stack.top() == id) {
         close();
     }
+}
+
+/**
+ * Move constructor.
+ */
+StructureWriter::StructureWriter(StructureWriter &&src) : writer(src.writer), id(src.id) {
+    src.writer = nullptr;
+    src.id = 0;
+}
+
+/**
+ * Move assignment.
+ */
+StructureWriter &StructureWriter::operator=(StructureWriter &&src) {
+    if (writer && !writer->stack.empty() && writer->stack.top() == id) {
+        close();
+    }
+    writer = src.writer;
+    id = src.id;
+    src.writer = nullptr;
+    src.id = 0;
 }
 
 /**
@@ -725,7 +737,7 @@ StructureWriter::~StructureWriter() {
 void StructureWriter::close() {
     uint8_t data = 0xFF;
     stream().write(reinterpret_cast<char*>(&data), 1);
-    writer.stack.pop();
+    writer->stack.pop();
 }
 
 /**
@@ -880,7 +892,7 @@ MapWriter MapWriter::append_map(const std::string &key) {
 /**
  * Creates a CBOR writer that writes to the given stream.
  */
-Writer::Writer(std::ostream &stream) : stream(stream), id_counter(0) {
+Writer::Writer(std::ostream &stream) : stream(stream), id_counter(1) {
 }
 
 /**

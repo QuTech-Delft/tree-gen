@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdio>
 #include <stdexcept>
 #define ASSERT(x) do { if (!(x)) throw std::runtime_error("assertion failed: " #x " is false at " __FILE__ ":" + std::to_string(__LINE__)); } while (0)
 
@@ -100,7 +101,11 @@ int main() {
 
     // We *can*, of course, add copies of nodes. That's what copy (shallow) and
     // clone (deep) are for. Usually you'll want a deep copy, but in this case
-    // shallow is fine, because a File has no child nodes.
+    // shallow is fine, because a File has no child nodes. Note that, even for
+    // a deep copy, links are not modified; it is intended to copy a subtree to
+    // another part of the same tree. To make a complete copy of a tree that
+    // maintains link semantics (i.e. does not link back to the original tree)
+    // the best way would be to go through serialize/deserialize.
     root->entries.add(root->entries[0]->copy());
     ASSERT(system.is_well_formed());
 
@@ -141,7 +146,46 @@ int main() {
     system->dump();
     std::cout << std::endl;
 
-    // TODO: serialization and deserialization.
+    // Now that we have a nice tree, let's try the serialization and
+    // deserialization functionality. Serializing is easy:
+    std::string cbor = tree::base::serialize(system);
 
+    // Let's have a look at a hexdump of that.
+    std::cout << "Hexdump of CBOR serialization:" << std::endl;
+    int count = 0;
+    for (char c : cbor) {
+        if (count == 16) {
+            std::printf("\n");
+            count = 0;
+        } else if (count > 0 && count % 4 == 0) {
+            std::printf(" ");
+        }
+        std::printf("%02X ", (uint8_t)c);
+        count++;
+    }
+    std::printf("\n");
+    std::cout << "You can pull that through cbor.me and jsonformatter.org to "
+              << "inspect the output, if you like." << std::endl << std::endl;
+
+    // We can deserialize it into a complete copy of the tree.
+    auto system2 = tree::base::deserialize<directory::System>(cbor);
+    std::cout << "Deserialized copy of the tree:" << std::endl;
+    system2->dump();
+    std::cout << std::endl;
+
+    // Note that equality for two link edges is satisfied only if they point to
+    // the exact same node.
+    ASSERT(system2 != system);
+
+    // To be sure no data was lost, we'll have to check the CBOR and debug dumps
+    // instead.
+    ASSERT(tree::base::serialize(system) == tree::base::serialize(system2));
+    std::ostringstream ss1{};
+    system->dump(ss1);
+    std::ostringstream ss2{};
+    system2->dump(ss2);
+    ASSERT(ss1.str() == ss2.str());
+
+    std::cout << "Looks like we're good!" << std::endl;
     return 0;
 }

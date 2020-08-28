@@ -254,7 +254,7 @@
  *
  *  - `One<Node> clone() const`: returns a shallow copy of this node.
  *
- *  - `One<Node> deep_clone() const` (TODO): returns a deep copy of this node.
+ *  - `One<Node> deep_clone() const`: returns a deep copy of this node.
  *
  *  - An equality and inequality operator. Note that this ignores equality of
  *    any annotations.
@@ -343,21 +343,11 @@
  *
  * \subsection serdes Serialization and deserialization
  *
- * TODO: all functionality specified here is WIP
- *
  * Optionally, logic to serialize and deserialize trees can be generated in
- * addition to the APIs above. This makes use of the RFC7049 CBOR data format,
- * serving as a compromise between the readability of JSON and speed/simplicity
- * of the serialization and deserialization logic. Specifically, CBOR can be
- * losslessly converted to and from JSON using third-party tools if need be for
- * debugging (at least for as far as it's used here), but is itself a simple
- * binary format.
- *
- * The serialization and deserialization logic for the tree itself will be
- * generated, but to do that, tree-gen needs to know how to serialize and
- * deserialize primitive types. This is done through two templated functions
- * that the program must provide for all primitives in addition to the
- * initialization function:
+ * addition to the APIs above. To enable this, you have to tell tree-gen how to
+ * serialize and deserialize the primitive types that you use in the tree
+ * through two templated functions that must be specialized for all primitive
+ * types (similar and in addition to the initialization function):
  *
  * ```
  * template <typename T>
@@ -370,18 +360,38 @@
  * The former must serialize `obj` by calling the various `append_*()` functions
  * on the given \ref tree::cbor::MapWriter "MapWriter" object. The latter must
  * perform the reverse operation. The namespace(s) and names of these functions
- * must be provided to tree-gen using the `serdes_functions` directive.
+ * must be provided to tree-gen using the optional `serdes_functions` directive.
+ * Specifying this directive enables the serialization and deserialization
+ * logic.
  *
- * When enabled, all generated classes will receive an additional constructor
- * taking a `const tree::cbor::MapReader &map` as argument for deserialization,
- * as well as a `void serialize(tree::cbor::MapWriter &map) const` method for
- * serialization.
+ * Once enabled, the entry point for serializing a tree is
+ * tree::base::serialize() or tree::base::serialize_file(), and deserializing
+ * is tree::base::deserialize() or tree::base::deserialize_file(). The internal
+ * serialization and deserialization functions in the edge classes and generated
+ * node classes are public and could also be used, but these require more
+ * boilerplate due to link handling.
  *
- * Each edge and each primitive receives its own object in the tree. Note that
+ * If you attempt to use these methods for a tree without
+ * serialization/deserialization support enabled, you'll receive a template
+ * error. Template errors are notoriously difficult to understand, so you have
+ * been warned. Don't use them unless you enable support through the
+ * `serdes_functions` directive. Attempting to serialize a tree that is not
+ * well-formed will lead to a tree::base::NotWellFormed exception.
+ *
+ * \subsubsection format Serialization format
+ *
+ * The serialization format makes use of the RFC7049 CBOR data representation,
+ * serving as a compromise between the readability of JSON and speed/simplicity
+ * of the serialization and deserialization logic. Specifically, CBOR can be
+ * losslessly converted to and from JSON using third-party tools if need be for
+ * debugging (at least for as far as it's used here), but is itself a simple
+ * binary format.
+ *
+ * Each edge and each primitive receives its own map in the tree. Note that
  * Any and Many are internally represented as a vector of One edges; therefore,
  * Any/Many results in two nested edge objects. The data for nodes and their
  * annotations is stored along with the One/Maybe edges. The keys for the
- * objects are the following:
+ * maps are the following:
  *
  * ```
  * empty Maybe:

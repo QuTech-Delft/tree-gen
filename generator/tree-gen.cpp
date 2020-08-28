@@ -137,7 +137,8 @@ static void generate_typecast_function(
 static void generate_base_class(
     std::ofstream &header,
     std::ofstream &source,
-    Nodes &nodes
+    Nodes &nodes,
+    bool with_serdes
 ) {
 
     format_doc(header, "Main class for all nodes.");
@@ -176,8 +177,54 @@ static void generate_base_class(
         generate_typecast_function(header, source, "Node", *node, false);
     }
 
+    if (with_serdes) {
+        format_doc(header, "Serializes this node to the given map.", "    ");
+        header << "    virtual void serialize(" << std::endl;
+        header << "        ::tree::cbor::MapWriter &map," << std::endl;
+        header << "        const ::tree::base::PointerMap &ids" << std::endl;
+        header << "    ) const = 0;" << std::endl << std::endl;
+
+        format_doc(header, "Deserializes the given node.", "    ");
+        header << "    static std::shared_ptr<Node> deserialize(" << std::endl;
+        header << "         const ::tree::cbor::MapReader &map," << std::endl;
+        header << "         ::tree::base::IdentifierMap &ids" << std::endl;
+        header << "    );" << std::endl << std::endl;
+        format_doc(source, "Writes a debug dump of this node to the given stream.");
+        source << "std::shared_ptr<Node> Node::deserialize(" << std::endl;
+        source << "    const ::tree::cbor::MapReader &map," << std::endl;
+        source << "    ::tree::base::IdentifierMap &ids" << std::endl;
+        source << ") {" << std::endl;
+        source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
+        for (auto &node : nodes) {
+            if (node->derived.empty()) {
+                source << "    if (type == \"" << node->title_case_name << "\") ";
+                source << "return " << node->title_case_name << "::deserialize(map, ids);" << std::endl;
+            }
+        }
+        source << "    throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;
+        source << "}" << std::endl << std::endl;
+    }
+
     header << "};" << std::endl << std::endl;
 
+}
+
+/**
+ * Recursive function to print a muxing if statement for all node classes
+ * derived from the given node class.
+ */
+void generate_deserialize_mux(
+    std::ofstream &source,
+    NodeType &node
+) {
+    if (node.derived.empty()) {
+        source << "    if (type == \"" << node.title_case_name << "\") ";
+        source << "return " << node.title_case_name << "::deserialize(map, ids);" << std::endl;
+    } else {
+        for (auto &derived : node.derived) {
+            generate_deserialize_mux(source, *(derived.lock()));
+        }
+    }
 }
 
 /**
@@ -186,8 +233,7 @@ static void generate_base_class(
 static void generate_node_class(
     std::ofstream &header,
     std::ofstream &source,
-    const std::string &initialize_function,
-    const std::string &tree_namespace,
+    Specification &spec,
     NodeType &node
 ) {
     const auto all_children = node.all_children();
@@ -252,7 +298,7 @@ static void generate_node_class(
                 case Many:    header << "Many<"    << child.node_type->title_case_name << ">()"; break;
                 case OptLink: header << "OptLink<" << child.node_type->title_case_name << ">()"; break;
                 case Link:    header << "Link<"    << child.node_type->title_case_name << ">()"; break;
-                case Prim:    header << initialize_function << "<" << child.prim_type << ">()"; break;
+                case Prim:    header << spec.initialize_function << "<" << child.prim_type << ">()"; break;
             }
         }
         header << ");" << std::endl << std::endl;
@@ -368,6 +414,22 @@ static void generate_node_class(
         source << "}" << std::endl << std::endl;
     }
 
+    // Print visitor function.
+    if (node.derived.empty()) {
+        auto doc = "Visit a `" + node.title_case_name + "` node.";
+        format_doc(header, doc, "    ");
+        header << "    void visit(Visitor &visitor) override;" << std::endl << std::endl;
+        format_doc(source, doc);
+        source << "void " << node.title_case_name;
+        source << "::visit(Visitor &visitor) {" << std::endl;
+        source << "    visitor.visit_" << node.snake_case_name;
+        source << "(*this);" << std::endl;
+        source << "}" << std::endl << std::endl;
+    }
+
+    // Print conversion function.
+    generate_typecast_function(header, source, node.title_case_name, node, true);
+
     // Print copy method.
     if (node.derived.empty()) {
         auto doc = "Returns a shallow copy of this node.";
@@ -377,8 +439,8 @@ static void generate_node_class(
         source << "One<Node> " << node.title_case_name;
         source << "::copy() const {" << std::endl;
         source << "    return ";
-        if (!tree_namespace.empty()) {
-            source << tree_namespace << "::";
+        if (!spec.tree_namespace.empty()) {
+            source << spec.tree_namespace << "::";
         }
         source << "make<" << node.title_case_name << ">(*this);" << std::endl;
         source << "}" << std::endl << std::endl;
@@ -393,8 +455,8 @@ static void generate_node_class(
         source << "One<Node> " << node.title_case_name;
         source << "::clone() const {" << std::endl;
         source << "    return ";
-        if (!tree_namespace.empty()) {
-            source << tree_namespace << "::";
+        if (!spec.tree_namespace.empty()) {
+            source << spec.tree_namespace << "::";
         }
         source << "make<" << node.title_case_name << ">(" << std::endl;
         bool first = true;
@@ -451,21 +513,114 @@ static void generate_node_class(
         source << "}" << std::endl << std::endl;
     }
 
-    // Print visitor function.
-    if (node.derived.empty()) {
-        auto doc = "Visit a `" + node.title_case_name + "` node.";
-        format_doc(header, doc, "    ");
-        header << "    void visit(Visitor &visitor) override;" << std::endl << std::endl;
-        format_doc(source, doc);
-        source << "void " << node.title_case_name;
-        source << "::visit(Visitor &visitor) {" << std::endl;
-        source << "    visitor.visit_" << node.snake_case_name;
-        source << "(*this);" << std::endl;
-        source << "}" << std::endl << std::endl;
-    }
+    // Print serdes methods.
+    if (!spec.serialize_fn.empty()) {
+        if (node.derived.empty()) {
+            format_doc(header, "Serializes this node to the given map.", "    ");
+            header << "    void serialize(" << std::endl;
+            header << "        ::tree::cbor::MapWriter &map," << std::endl;
+            header << "        const ::tree::base::PointerMap &ids" << std::endl;
+            header << "    ) const override;" << std::endl << std::endl;
+            format_doc(source, "Serializes this node to the given map.");
+            source << "void " << node.title_case_name << "::serialize(" << std::endl;
+            source << "    ::tree::cbor::MapWriter &map," << std::endl;
+            source << "    const ::tree::base::PointerMap &ids" << std::endl;
+            source << ") const {" << std::endl;
+            source << "    map.append_string(\"@t\", \"" << node.title_case_name << "\");" << std::endl;
+            bool first = true;
+            for (const auto &child : all_children) {
+                source << "    ";
+                if (first) {
+                    source << "auto ";
+                    first = false;
+                }
+                source << "submap = map.append_map(\"" << child.name << "\");" << std::endl;
+                if (child.type == Prim && child.ext_type == Prim) {
+                    source << "    " << spec.serialize_fn << "<" << child.prim_type << ">";
+                    source << "(" << child.name << ", submap);" << std::endl;
+                } else {
+                    source << "    " << child.name << ".serialize(submap, ids);" << std::endl;
+                }
+                source << "    submap.close();" << std::endl;
+            }
+            source << "    serialize_annotations(map);" << std::endl;
+            source << "}" << std::endl << std::endl;
 
-    // Print conversion function.
-    generate_typecast_function(header, source, node.title_case_name, node, true);
+            format_doc(header, "Deserializes the given node.", "    ");
+            header << "    static std::shared_ptr<" << node.title_case_name << "> ";
+            header << "deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids);" << std::endl << std::endl;
+            format_doc(source, "Writes a debug dump of this node to the given stream.");
+            source << "std::shared_ptr<" << node.title_case_name << "> ";
+            source << node.title_case_name << "::deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids) {" << std::endl;
+            source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
+            source << "    if (type != \"" << node.title_case_name << "\") {" << std::endl;
+            source << "        throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;
+            source << "    }" << std::endl;
+            source << "    auto node = std::make_shared<" << node.title_case_name << ">(" << std::endl;
+            std::vector<ChildNode> links{};
+            first = true;
+            for (const auto &child : all_children) {
+                if (first) {
+                    first = false;
+                } else {
+                    source << "," << std::endl;
+                }
+                source << "        ";
+
+                AttributeType type = (child.type != Prim) ? child.type : child.ext_type;
+                std::string node_type = (child.type != Prim) ? child.node_type->title_case_name : child.prim_type;
+                std::string edge_type;
+                switch (type) {
+                    case Maybe:   edge_type = "Maybe"; break;
+                    case One:     edge_type = "One"; break;
+                    case Any:     edge_type = "Any"; break;
+                    case Many:    edge_type = "Many"; break;
+                    case OptLink: edge_type = "OptLink"; break;
+                    case Link:    edge_type = "Link"; break;
+                    default:      edge_type = "<undefined>"; break;
+                }
+                if (type == Prim) {
+                    source << spec.deserialize_fn << "<" << child.prim_type << ">";
+                    source << "(map.at(\"" << child.name << "\").as_map())";
+                } else {
+                    source << edge_type << "<" << child.node_type->title_case_name << ">(";
+                    source << "map.at(\"" << child.name << "\").as_map(), ids)";
+                }
+                if (type == OptLink || type == Link) {
+                    links.push_back(child);
+                }
+            }
+            source << std::endl;
+            source << "    );" << std::endl;
+            first = true;
+            for (const auto &link : links) {
+                source << "    ";
+                if (first) {
+                    first = false;
+                    source << "auto ";
+                }
+                source << "link = map.at(\"" << link.name << "\").as_map().at(\"@l\");" << std::endl;
+                source << "    if (!link.is_null()) {" << std::endl;
+                source << "        ids.register_link(node->" << link.name << ", link.as_int());" << std::endl;
+                source << "    }" << std::endl;
+            }
+            source << "    return node;" << std::endl;
+            source << "}" << std::endl << std::endl;
+        } else {
+            format_doc(header, "Deserializes the given node.", "    ");
+            header << "    static std::shared_ptr<" << node.title_case_name << "> ";
+            header << "deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids);" << std::endl << std::endl;
+            format_doc(source, "Writes a debug dump of this node to the given stream.");
+            source << "std::shared_ptr<" << node.title_case_name << "> ";
+            source << node.title_case_name << "::deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids) {" << std::endl;
+            source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
+            for (auto &derived : node.derived) {
+                generate_deserialize_mux(source, *(derived.lock()));
+            }
+            source << "    throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;
+            source << "}" << std::endl << std::endl;
+        }
+    }
 
     // Print class footer.
     header << "};" << std::endl << std::endl;
@@ -962,7 +1117,7 @@ int main(
     generate_enum(header, nodes);
 
     // Generate the base class.
-    generate_base_class(header, source, nodes);
+    generate_base_class(header, source, nodes, !specification.serialize_fn.empty());
 
     // Generate the node classes.
     std::unordered_set<std::string> generated;
@@ -981,7 +1136,7 @@ int main(
                 continue;
             }
             generated.insert(node->snake_case_name);
-            generate_node_class(header, source, specification.initialize_function, specification.tree_namespace, *node);
+            generate_node_class(header, source, specification, *node);
         }
     }
 
