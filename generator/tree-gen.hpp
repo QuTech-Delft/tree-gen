@@ -358,9 +358,9 @@
  * ```
  *
  * The former must serialize `obj` by calling the various `append_*()` functions
- * on the given \ref tree::cbor::MapWriter "MapWriter" object. The latter must
- * perform the reverse operation. The namespace(s) and names of these functions
- * must be provided to tree-gen using the optional `serdes_functions` directive.
+ * on the given `tree::cbor::MapWriter` object. The latter must perform the
+ * reverse operation. The namespace(s) and names of these functions must be
+ * provided to tree-gen using the optional `serdes_functions` directive.
  * Specifying this directive enables the serialization and deserialization
  * logic.
  *

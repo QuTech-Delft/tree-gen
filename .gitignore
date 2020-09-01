@@ -87,5 +87,7 @@ log
 # Add swig generated sources
 library/**/*_swig*
 
+# CLion generated/project files
 .idea/
 cmake-build-*/
+venv/

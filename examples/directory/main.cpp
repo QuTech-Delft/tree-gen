@@ -1,38 +1,90 @@
 #include <iostream>
 #include <cstdio>
 #include <stdexcept>
-#define ASSERT(x) do { if (!(x)) throw std::runtime_error("assertion failed: " #x " is false at " __FILE__ ":" + std::to_string(__LINE__)); } while (0)
+#include "../example.hpp"
 
 // Include the generated file.
 #include "directory.hpp"
 
+// Note: the // comment contents of main(), together with the MARKER lines and
+// the output of the program, are used to automatically turn this into a
+// restructured-text page for ReadTheDocs.
+
 int main() {
 
-    // Make a new system tree.
+    // **********************
+    // Directory tree example
+    // **********************
+    //
+    // This tutorial/example should teach you the basics of using tree-gen
+    // trees. The tutorial runs you through the C++ code of ``main.cpp``, but be
+    // sure to check out ``directory.tree``, ``primitives.hpp``, and (if you
+    // want to reproduce it in your own project) ``CMakeLists.txt`` copied to
+    // the bottom of this page as well. You will also find the complete
+    // ``main.cpp`` there.
+    //
+    // Let's start by making the root node using ``tree::base::make()``. This
+    // works somewhat like ``std::make_shared()``, but instead of returning a
+    // ``shared_ptr`` it returns a ``One`` edge. This might come off as a bit
+    // odd, considering trees in graph theory start with a node rather than an
+    // edge. This is just a choice, though; a side effect of how the internal
+    // ``shared_ptr``s work and how Link/OptLink edges work (if you'd store the
+    // tree as the root structure directly, the root node wouldn't always be
+    // stored in the same place on the heap, breaking link nodes).
     auto system = tree::base::make<directory::System>();
+    MARKER
 
-    std::cout << "Dumping an empty system node. The tree is not well-formed at "
-              << "this time." << std::endl;
+    // At all times, you can use the ``dump()`` method on a node to see what it
+    // looks like for debugging purposes. It looks like this:
     system->dump();
-    std::cout << std::endl;
+    MARKER
+
+    // While this system node exists as a tree in memory and tree-gen seems
+    // happy, our system tree is at this time not "well-formed". A tree node (or
+    // an edge to one) is only considered well-formed if all of the following
+    // are true:
+    //
+    //  - All ``One`` edges in the tree connect to exactly one node.
+    //  - All ``Many`` edges in the tree connect to at least one node.
+    //  - All ``Link`` and non-empty ``OptLink`` nodes refer to a node reachable
+    //    from the root node.
+    //  - Each node in the tree is only used by a non-link node once.
+    //
+    // Currently, the second requirement is not met.
     ASSERT(!system.is_well_formed());
+    MARKER
 
-    // Add a default drive. This should get drive letter A, because
-    // primitives::initialize() is specialized to return that for Letters.
+    // You can get slightly more information using ``check_well_formed()``;
+    // instead or returning a boolean, it will throw a ``NotWellFormed``
+    // exception with an error message.
+    ASSERT_RAISES(tree::base::NotWellFormed, system.check_well_formed());
+    MARKER
+
+    // Note that the name of the type is
+    // `"mangled" <https://en.wikipedia.org/wiki/Name_mangling#C++>`_. The exact
+    // output will vary from compiler to compiler, or even from project to
+    // project. But hopefully it'll be readable enough to make sense of in
+    // general.
+    
+    // To fix that, let's add a default drive node to the tree. This should get
+    // drive letter ``A``, because primitives::initialize() is specialized to
+    // return that for ``Letter``s (see primitives.hpp).
     system->drives.add(tree::base::make<directory::Drive>());
+    MARKER
 
-    // We have to give it a directory tree as well to complete it.
+    // ``Drive`` has a ``One`` edge that is no empty, though, so the tree still
+    // isn't well-formed. Let's add one of those as well.
     system->drives[0]->root_dir = tree::base::make<directory::Directory>();
+    MARKER
 
-    std::cout << "Adding a drive with an empty directory tree completes it, "
-              << "as the entries in a directory are of type Any and thus can "
-              << "be empty." << std::endl;
+    // Now we have a well-formed tree. Let's have a look:
+    system.check_well_formed();
     system->dump();
-    std::cout << std::endl;
-    ASSERT(system.is_well_formed());
+    MARKER
 
     // We can just change the drive letter by assignment, as you would expect.
     system->drives[0]->letter = 'C';
+    MARKER
 
     // Before we add files and directories, let's make a shorthand variable for
     // the root directory. Because root_dir is an edge to another node rather
@@ -41,13 +93,15 @@ int main() {
     // tree. Note that you'd normally just write "auto" for the type for
     // brevity; the type is shown here to make explicit what it turns into.
     directory::One<directory::Directory> root = system->drives[0]->root_dir;
+    MARKER
 
     // Let's make a "Program Files" subdirectory and add it to the root.
     auto programs = tree::base::make<directory::Directory>(
         tree::base::Any<directory::Entry>{},
         "Program Files");
     root->entries.add(programs);
-    ASSERT(system.is_well_formed());
+    system.check_well_formed();
+    MARKER
 
     // That's quite verbose. But in most cases it can be written way shorter.
     // Here's the same with the less versatile but also less verbose emplace()
@@ -64,7 +118,8 @@ int main() {
                      .emplace<File>("lots of page file data", "pagefile.sys")
                      .emplace<File>("lots of swap data", "swapfile.sys");
     }
-    ASSERT(system.is_well_formed());
+    system.check_well_formed();
+    MARKER
 
     // In order to look for a file in a directory, you'll have to make your own
     // function to iterate over them. After all, tree-gen doesn't know that the
@@ -76,12 +131,15 @@ int main() {
     ASSERT(root->entries[4]->name == "pagefile.sys");
     // ASSERT(root->entries[4]->contents == "lots of page file data");
     //  '-> No member named 'contents' in 'directory::Entry'
+    MARKER
 
     // Hm, that didn't work so well, because C++ doesn't know that entry 4
     // happens to be a file rather than a directory or a mount. We have to tell
     // it to cast to a file first (which throws a std::bad_cast if it's not
     // actually a file). The easiest way to do that is like this:
     ASSERT(root->entries[4]->as_file()->contents == "lots of page file data");
+    MARKER
+
     // No verbose casts required; tree-gen will make member functions for all
     // the possible subtypes.
 
@@ -90,14 +148,16 @@ int main() {
     // check is performed, however (and in fact can't be without having access
     // to the root node).
     root->entries.add(root->entries[0]);
-    ASSERT(!system.is_well_formed());
+    ASSERT_RAISES(tree::base::NotWellFormed, system.check_well_formed());
+    MARKER
 
     // Note that we can index nodes Python-style with negative integers for
     // add() and remove(), so remove(-1) will remove the broken node we just
     // added. Note that the -1 is not actually necessary, though, as it is the
     // default.
     root->entries.remove(-1);
-    ASSERT(system.is_well_formed());
+    system.check_well_formed();
+    MARKER
 
     // We *can*, of course, add copies of nodes. That's what copy (shallow) and
     // clone (deep) are for. Usually you'll want a deep copy, but in this case
@@ -107,13 +167,15 @@ int main() {
     // maintains link semantics (i.e. does not link back to the original tree)
     // the best way would be to go through serialize/deserialize.
     root->entries.add(root->entries[0]->copy());
-    ASSERT(system.is_well_formed());
+    system.check_well_formed();
+    MARKER
 
     // Note that the generated classes don't care that there are now two
     // directories named Program Files in the root. As far as they're concerned,
     // they're two different directories with the same name. Let's remove it
     // again, though.
     root->entries.remove();
+    MARKER
 
     // Something we haven't looked at yet are links. Links are edges in the tree
     // that, well, turn it into something that isn't strictly a tree anymore.
@@ -124,34 +186,37 @@ int main() {
         tree::base::Any<directory::Entry>{},
         "");
     root->entries.emplace<directory::Mount>(user_dir, "SomeUser");
+    MARKER
 
     // Note that user_dir is not yet part of the tree. emplace works simply
     // because it doesn't check whether the directory is in the tree yet. But
     // the tree is no longer well-formed now.
-    ASSERT(!system.is_well_formed());
+    ASSERT_RAISES(tree::base::NotWellFormed, system.check_well_formed());
+    MARKER
 
     // To make it work again, we can add it as a root directory to a second
     // drive.
     system->drives.emplace<directory::Drive>('D', user_dir);
-    ASSERT(system.is_well_formed());
+    system.check_well_formed();
+    MARKER
 
     // A good way to confuse a filesystem is to make loops. tree-gen is okay
     // with this, though.
     system->drives[1]->root_dir->entries.emplace<directory::Mount>(root, "evil link to C:");
-    ASSERT(system.is_well_formed());
+    system.check_well_formed();
+    MARKER
 
     // The only place where it matters is in the dump function, which only goes
     // one level deep. After that, it'll just print an ellipsis.
-    std::cout << "After continuing to build the tree:" << std::endl;
     system->dump();
-    std::cout << std::endl;
+    MARKER
 
     // Now that we have a nice tree, let's try the serialization and
     // deserialization functionality. Serializing is easy:
     std::string cbor = tree::base::serialize(system);
+    MARKER
 
     // Let's have a look at a hexdump of that.
-    std::cout << "Hexdump of CBOR serialization:" << std::endl;
     int count = 0;
     for (char c : cbor) {
         if (count == 16) {
@@ -164,18 +229,21 @@ int main() {
         count++;
     }
     std::printf("\n");
-    std::cout << "You can pull that through cbor.me and jsonformatter.org to "
-              << "inspect the output, if you like." << std::endl << std::endl;
+    MARKER
+
+    // You can pull that through http://cbor.me and https://jsonformatter.org
+    // to inspect the output, if you like.
 
     // We can deserialize it into a complete copy of the tree.
     auto system2 = tree::base::deserialize<directory::System>(cbor);
-    std::cout << "Deserialized copy of the tree:" << std::endl;
     system2->dump();
-    std::cout << std::endl;
+    MARKER
 
     // Note that equality for two link edges is satisfied only if they point to
-    // the exact same node.
+    // the exact same node. That's not the case for the links in our two
+    // entirely separate trees, so the two trees register as unequal.
     ASSERT(system2 != system);
+    MARKER
 
     // To be sure no data was lost, we'll have to check the CBOR and debug dumps
     // instead.
@@ -185,7 +253,7 @@ int main() {
     std::ostringstream ss2{};
     system2->dump(ss2);
     ASSERT(ss1.str() == ss2.str());
+    MARKER
 
-    std::cout << "Looks like we're good!" << std::endl;
     return 0;
 }

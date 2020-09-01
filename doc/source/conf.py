@@ -20,6 +20,126 @@
 import subprocess
 import os
 import sys
+
+def rstify(output_filename, executable_filename, main_filename, *extra_filenames):
+    """Tool for turning example code & output into an RST page for
+    Sphinx/ReadTheDocs."""
+
+    # Call the example executable and get its output.
+    output = subprocess.check_output(executable_filename).decode('UTF-8').split('\n')
+
+    # Read the source files.
+    with open(main_filename, 'r') as f:
+        main = f.read()
+    files = []
+    for filename in extra_filenames:
+        with open(filename, 'r') as f:
+            contents = f.read()
+        files.append((os.path.basename(filename), contents))
+    files.append(('main.cpp', main))
+
+    # In main.cpp, look for the actual "int main..." line and the corresponding
+    # closing curly bracket.
+    main_fn = main.split('int main(', maxsplit=1)[1].split('{\n', maxsplit=1)[1]
+    main_fn = main_fn.split('\n}', maxsplit=1)[0].split('\n')
+
+    # Parse the contents of main and stdout and match them together using the
+    # markers.
+    sections = []
+    main_lines = iter(main_fn)
+    out_lines = iter(output)
+    try:
+        while True:
+            section = {}
+
+            # Parse // comment block as markdown text.
+            text = []
+            strip_indent = 0
+            while True:
+                line = next(main_lines)
+                parts = line.split('//', maxsplit=1)
+                if not line.strip():
+                    text.append('')
+                elif len(parts) == 2:
+                    comment = parts[1]
+                    if comment.startswith(' '):
+                        comment = comment[1:]
+                    text.append(comment)
+                    strip_indent = len(parts[0])
+                else:
+                    break
+            section['text'] = '\n'.join(text).strip()
+
+            # Parse the subsequent code for insertion as a C++ code block.
+            code = []
+            while True:
+                if 'MARKER' in line:
+                    break
+                if not line[:strip_indent].strip():
+                    line = line[strip_indent:]
+                code.append(line)
+                line = next(main_lines)
+            section['code'] = '\n'.join(code)
+
+            # Parse any output.
+            out = []
+            while True:
+                line = next(out_lines)
+                if '###MARKER###' in line:
+                    break
+                out.append(line)
+            section['output'] = '\n'.join(out)
+
+            sections.append(section)
+    except StopIteration:
+        pass
+
+    rst = []
+
+    # Print the tutorial-esque sections.
+    for section in sections:
+        rst.append(section['text'])
+        rst.append('')
+        if section['code'].strip():
+            rst.append('.. code-block:: C++')
+            rst.append('  ')
+            for line in section['code'].split('\n'):
+                rst.append('  ' + line)
+            rst.append('')
+            if section['output'].strip():
+                rst.append('.. rst-class:: center')
+                rst.append('')
+                rst.append('↓')
+                rst.append('')
+                rst.append('.. code-block:: none')
+                rst.append('  ')
+                for line in section['output'].split('\n'):
+                    rst.append('  ' + line)
+                rst.append('')
+
+    # Print the complete files afterwards.
+    rst.append('Complete file listings')
+    rst.append('======================')
+    rst.append('')
+    for name, contents in files:
+        rst.append(name)
+        rst.append('-' * len(name))
+        rst.append('')
+        if name.endswith('cpp') or name.endswith('hpp'):
+            rst.append('.. code-block:: C++')
+        elif name.endswith('txt'):
+            rst.append('.. code-block:: CMake')
+        else:
+            rst.append('.. code-block:: none')
+        rst.append('  :linenos:')
+        rst.append('  ')
+        for line in contents.split('\n'):
+            rst.append('  ' + line)
+        rst.append('')
+
+    with open(output_filename, 'w') as f:
+        f.write('\n'.join(rst))
+
 original_workdir = os.getcwd()
 try:
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -27,12 +147,45 @@ try:
     if not os.path.exists('doc/doxygen/doxy'):
         if not os.path.exists('cbuild'):
             os.mkdir('cbuild')
+
+        # Build tree-gen.
         os.chdir('cbuild')
-        subprocess.check_call(['cmake', '..'])
+        subprocess.check_call(['cmake', '..', '-DTREE_GEN_BUILD_TESTS=ON'])
         subprocess.check_call(['make', '-j', '8'])
+
+        # Generate a page from the markdown at the top of tree-gen.hpp.
+        with open('../generator/tree-gen.hpp', 'r') as f:
+            text = f.read()
+        text = text.split('\page tree-gen tree-gen', maxsplit=1)[1].split('*/', maxsplit=1)[0]
+        lines = ['# Overview', '']
+        for line in text.split('\n'):
+            if line.startswith(' *'):
+                line = line[3:]
+            if line.startswith('\\section'):
+                line = '## ' + line[9:].strip().split(maxsplit=1)[1]
+            elif line.startswith('\\subsection'):
+                line = '### ' + line[12:].strip().split(maxsplit=1)[1]
+            elif line.startswith('\\subsubsection'):
+                line = '#### ' + line[15:].strip().split(maxsplit=1)[1]
+            lines.append(line)
+        with open('../doc/source/tree-gen.gen.md', 'w') as f:
+            f.write('\n'.join(lines))
+
+        # Run the examples and generate pages from them.
+        rstify(
+            '../doc/source/directory.gen.rst',
+            'examples/directory/directory-example',
+            '../examples/directory/main.cpp',
+            '../examples/directory/directory.tree',
+            '../examples/directory/primitives.hpp',
+            '../examples/directory/CMakeLists.txt'
+        )
+
+        # Run Doxygen.
         os.chdir('../doc')
         subprocess.check_call(['doxygen'])
         subprocess.check_call(['mv', '-f', 'doxygen/html', 'doxygen/doxy'])
+
 finally:
     os.chdir(original_workdir)
 
@@ -71,7 +224,11 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
+
+source_parsers = {
+   '.md': 'recommonmark.parser.CommonMarkParser',
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -112,6 +269,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+html_css_files = ['center.css']
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
 #

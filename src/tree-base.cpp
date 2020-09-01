@@ -28,7 +28,7 @@ size_t PointerMap::get_raw(const void *ptr, const char *name) const {
     if (it == map.end()) {
         std::ostringstream ss{};
         ss << "Link to node of type " << name;
-        ss << "at address " << std::hex << ptr << " not found in tree";
+        ss << " at address " << std::hex << ptr << " not found in tree";
         throw NotWellFormed(ss.str());
     }
     return it->second;

@@ -180,6 +180,7 @@ if(TREE_GEN_BUILD_TESTS)
 
     # Include the directories containing tests.
     add_subdirectory(tests)
+    add_subdirectory(examples)
 
 endif()
 
