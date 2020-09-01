@@ -1,0 +1,111 @@
+// Attach \file docstrings to the generated files for Doxygen.
+# Implementation for value tree classes.
+source
+
+# Header for value tree classes.
+header
+
+// Include tree base classes.
+include "tree-base.hpp"
+tree_namespace tree::base
+
+// Include primitive types.
+include "primitives.hpp"
+
+// Initialization function to use to construct default values for the tree base
+// classes and primitives.
+initialize_function primitives::initialize
+serdes_functions primitives::serialize primitives::deserialize
+
+// Source location annotation type. The generated dumper will see if this
+// annotation exists for a node, and if so, write it to the debug dump using
+// the << stream operator.
+location primitives::SourceLocation
+
+// Set the namespace for the generated classes and attach a docstring.
+# Namespace for value tree classes.
+namespace value
+
+# Variable instance.
+variable {
+
+    # The name of the variable.
+    name: primitives::Str;
+
+    # The current value of the variable while interpreting.
+    value: primitives::Int;
+
+}
+
+# Toplevel expression node.
+rvalue {
+
+    # A literal integer.
+    literal {
+
+        # The value of the literal.
+        value: primitives::Int;
+
+    }
+
+    # Unary operators.
+    unop {
+
+        # The operand.
+        oper: One<rvalue>;
+
+        # Negation.
+        negate {}
+
+    }
+
+    # Binary operators.
+    binop {
+
+        # Left-hand side of the expression.
+        lhs: One<rvalue>;
+
+        # Right-hand side of the expression.
+        rhs: One<rvalue>;
+
+        # Addition.
+        add {}
+
+        # Subtraction.
+        sub {}
+
+        # Multiplication.
+        mul {}
+
+        # Division.
+        div {}
+
+    }
+
+    # Toplevel node for assignable expressions.
+    lvalue {
+
+        # A variable reference.
+        reference {
+
+            # The name used to refer to the variable.
+            name: primitives::Str;
+
+            # The variable being referenced.
+            // Note that we use a link here to allow multiple places in the
+            // tree to refer to the same variable instance in our toy
+            // interpreter, so we don't have to do a hashmap lookup each time
+            // and a well-formed tree by definition cannot refer to variables
+            // that don't exist.
+            target: Link<variable>;
+
+        }
+
+        # An erroneous expression.
+        erroneous_value {
+            error;
+        }
+
+    }
+
+}

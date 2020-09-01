@@ -9,3 +9,4 @@ tree-gen is a program that generates C++ source code for tree structures based o
 
    tree-gen.gen
    directory.gen
+   interpreter.gen

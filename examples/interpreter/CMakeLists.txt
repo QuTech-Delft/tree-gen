@@ -1,37 +1,45 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
-project(directory-example CXX)
+project(interpreter-example CXX)
 
 # Add the tree-gen repository root directory. Normally, your project would be
 # located outside of tree-gen's root, which means you can omit the second
 # argument.
 add_subdirectory(../.. tree-gen)
 
-# Generates the files for the directory tree.
+# Generates the files for the value tree.
 generate_tree(
-    "${CMAKE_CURRENT_SOURCE_DIR}/directory.tree"
-    "${CMAKE_CURRENT_BINARY_DIR}/directory.hpp"
-    "${CMAKE_CURRENT_BINARY_DIR}/directory.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/value.tree"
+    "${CMAKE_CURRENT_BINARY_DIR}/value.hpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/value.cpp"
+)
+
+# Generates the files for the program tree.
+generate_tree(
+    "${CMAKE_CURRENT_SOURCE_DIR}/program.tree"
+    "${CMAKE_CURRENT_BINARY_DIR}/program.hpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/program.cpp"
 )
 
 add_executable(
-    directory-example
-    "${CMAKE_CURRENT_BINARY_DIR}/directory.cpp"
+    interpreter-example
+    "${CMAKE_CURRENT_BINARY_DIR}/value.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/program.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 )
 
 target_include_directories(
-    directory-example
+    interpreter-example
     # This directory for primitives.hpp:
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     # Binary directory for directory.hpp:
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-target_link_libraries(directory-example tree-lib)
+target_link_libraries(interpreter-example tree-lib)
 
 # The following lines only serve to register the example as a test, so you can
 # run it using `make test` or `ctest` as well. You don't need them as such in
 # your own project.
 enable_testing()
-add_test(directory-example directory-example)
+add_test(interpreter-example interpreter-example)

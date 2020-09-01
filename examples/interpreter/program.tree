@@ -1,0 +1,102 @@
+// Attach \file docstrings to the generated files for Doxygen.
+# Implementation for program tree classes.
+source
+
+# Header for program tree classes.
+header
+
+// Include tree base classes.
+include "tree-base.hpp"
+tree_namespace tree::base
+
+// Include primitive types.
+include "primitives.hpp"
+
+// Include the generated value tree header.
+include "value.hpp"
+
+// Initialization function to use to construct default values for the tree base
+// classes and primitives.
+initialize_function primitives::initialize
+serdes_functions primitives::serialize primitives::deserialize
+
+// Source location annotation type. The generated dumper will see if this
+// annotation exists for a node, and if so, write it to the debug dump using
+// the << stream operator.
+location primitives::SourceLocation
+
+// Set the namespace for the generated classes and attach a docstring.
+# Namespace for program tree classes.
+namespace program
+
+# A program is a collection of statements.
+program {
+
+    # Variable declarations for the program.
+    variables: external Any<value::Variable>;
+
+    # The statements in the program.
+    statements: Any<statement>;
+
+}
+
+
+# A statement.
+statement {
+
+    # Conditional statement.
+    if_else {
+
+        # Branch condition.
+        cond: external One<value::Rvalue>;
+
+        # If block.
+        if_block: Any<statement>;
+
+        # Else block.
+        else_block: Any<statement>;
+
+    }
+
+    # For loop, from start to (non-inclusive) end.
+    for_loop {
+
+        # Variable to assign.
+        var: external One<value::Lvalue>;
+
+        # Start value.
+        start: external One<value::Rvalue>;
+
+        # Stop value.
+        stop: external One<value::Rvalue>;
+
+        # The repeated code.
+        block: Any<statement>;
+
+    }
+
+    # Assignment statement.
+    assignment {
+
+        # Variable to assign.
+        lhs: external One<value::Lvalue>;
+
+        # Expression to assign it to.
+        rhs: external One<value::Rvalue>;
+
+    }
+
+    # Print statement.
+    print {
+
+        # Value to print.
+        expr: external One<value::Rvalue>;
+
+    }
+
+    # An erroneous statement.
+    erroneous_statement {
+        error;
+    }
+
+}

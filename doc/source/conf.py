@@ -181,6 +181,16 @@ try:
             '../examples/directory/CMakeLists.txt'
         )
 
+        rstify(
+            '../doc/source/interpreter.gen.rst',
+            'examples/interpreter/interpreter-example',
+            '../examples/interpreter/main.cpp',
+            '../examples/interpreter/value.tree',
+            '../examples/interpreter/program.tree',
+            '../examples/interpreter/primitives.hpp',
+            '../examples/interpreter/CMakeLists.txt'
+        )
+
         # Run Doxygen.
         os.chdir('../doc')
         subprocess.check_call(['doxygen'])

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <stdexcept>
-#include "../example.hpp"
+#include "../utils.hpp"
 
 // Include the generated file.
 #include "directory.hpp"
@@ -16,12 +16,19 @@ int main() {
     // Directory tree example
     // **********************
     //
-    // This tutorial/example should teach you the basics of using tree-gen
-    // trees. The tutorial runs you through the C++ code of ``main.cpp``, but be
-    // sure to check out ``directory.tree``, ``primitives.hpp``, and (if you
-    // want to reproduce it in your own project) ``CMakeLists.txt`` copied to
-    // the bottom of this page as well. You will also find the complete
-    // ``main.cpp`` there.
+    // This example illustrates the tree system with a Windows-like directory
+    // tree structure. The ``System`` root node consists of one or more drives,
+    // each of which has a drive letter and a root directory with named files
+    // and subdirectories. To make things a little more interesting, a
+    // symlink-like "mount" is added as a file type, which links to another
+    // directory.
+    //
+    // Using this tree, this example should teach you the basics of using
+    // tree-gen trees. The tutorial runs you through the C++ code of
+    // ``main.cpp``, but be sure to check out ``directory.tree``,
+    // ``primitives.hpp``, and (if you want to reproduce it in your own project)
+    // ``CMakeLists.txt`` copied to the bottom of this page as well. You will
+    // also find the complete ``main.cpp`` there.
     //
     // Let's start by making the root node using ``tree::base::make()``. This
     // works somewhat like ``std::make_shared()``, but instead of returning a
@@ -65,7 +72,7 @@ int main() {
     // output will vary from compiler to compiler, or even from project to
     // project. But hopefully it'll be readable enough to make sense of in
     // general.
-    
+
     // To fix that, let's add a default drive node to the tree. This should get
     // drive letter ``A``, because primitives::initialize() is specialized to
     // return that for ``Letter``s (see primitives.hpp).
