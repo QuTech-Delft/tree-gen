@@ -162,8 +162,26 @@ static void generate_base_class(
     header << "        return !(*this == rhs);" << std::endl;
     header << "    }" << std::endl << std::endl;
 
+    header << "protected:" << std::endl << std::endl;
+    format_doc(header, "Internal helper method for visiter pattern.", "    ");
+    header << "    virtual void visit_internal(VisitorBase &visitor, void *retval=nullptr) = 0;" << std::endl << std::endl;
+
+    header << "public:" << std::endl << std::endl;
     format_doc(header, "Visit this object.", "    ");
-    header << "    virtual void visit(Visitor &visitor) = 0;" << std::endl << std::endl;
+    header << "    template <typename T>" << std::endl;
+    header << "    T visit(Visitor<T> &visitor);" << std::endl << std::endl;
+
+    /*header << "    T visit(Visitor<T> &visitor) {" << std::endl;
+    header << "        T retval;" << std::endl;
+    header << "        this->visit_internal(visitor, &retval);" << std::endl;
+    header << "        return retval;" << std::endl;
+    header << "    }" << std::endl << std::endl;
+
+    format_doc(header, "Visit this object.", "    "); TODO
+    header << "    template <>" << std::endl;
+    header << "    void visit<void>(Visitor &visitor) {" << std::endl;
+    header << "        this->visit_internal(visitor);" << std::endl;
+    header << "    }" << std::endl << std::endl;*/
 
     format_doc(header, "Writes a debug dump of this node to the given stream.", "    ");
     header << "    void dump(std::ostream &out=std::cout, int indent=0);" << std::endl << std::endl;
@@ -416,14 +434,16 @@ static void generate_node_class(
 
     // Print visitor function.
     if (node.derived.empty()) {
-        auto doc = "Visit a `" + node.title_case_name + "` node.";
+        auto doc = "Helper method for visiting nodes.";
+        header << "protected:" << std::endl << std::endl;
         format_doc(header, doc, "    ");
-        header << "    void visit(Visitor &visitor) override;" << std::endl << std::endl;
+        header << "    void visit_internal(VisitorBase &visitor, void *retval) override;" << std::endl << std::endl;
+        header << "public:" << std::endl << std::endl;
         format_doc(source, doc);
         source << "void " << node.title_case_name;
-        source << "::visit(Visitor &visitor) {" << std::endl;
-        source << "    visitor.visit_" << node.snake_case_name;
-        source << "(*this);" << std::endl;
+        source << "::visit_internal(VisitorBase &visitor, void *retval) {" << std::endl;
+        source << "    visitor.raw_visit_" << node.snake_case_name;
+        source << "(*this, retval);" << std::endl;
         source << "}" << std::endl << std::endl;
     }
 
@@ -568,23 +588,24 @@ static void generate_node_class(
                 source << "        ";
 
                 AttributeType type = (child.type != Prim) ? child.type : child.ext_type;
-                std::string node_type = (child.type != Prim) ? child.node_type->title_case_name : child.prim_type;
-                std::string edge_type;
-                switch (type) {
-                    case Maybe:   edge_type = "Maybe"; break;
-                    case One:     edge_type = "One"; break;
-                    case Any:     edge_type = "Any"; break;
-                    case Many:    edge_type = "Many"; break;
-                    case OptLink: edge_type = "OptLink"; break;
-                    case Link:    edge_type = "Link"; break;
-                    default:      edge_type = "<undefined>"; break;
-                }
-                if (type == Prim) {
+                if (child.type != Prim) {
+                    switch (child.type) {
+                        case Maybe:   source << "Maybe"; break;
+                        case One:     source << "One"; break;
+                        case Any:     source << "Any"; break;
+                        case Many:    source << "Many"; break;
+                        case OptLink: source << "OptLink"; break;
+                        case Link:    source << "Link"; break;
+                        default:      source << "<?????>"; break;
+                    }
+                    source << "<" << child.node_type->title_case_name << ">(";
+                    source << "map.at(\"" << child.name << "\").as_map(), ids)";
+                } else if (child.ext_type != Prim) {
+                    source << child.prim_type << "(";
+                    source << "map.at(\"" << child.name << "\").as_map(), ids)";
+                } else {
                     source << spec.deserialize_fn << "<" << child.prim_type << ">";
                     source << "(map.at(\"" << child.name << "\").as_map())";
-                } else {
-                    source << edge_type << "<" << child.node_type->title_case_name << ">(";
-                    source << "map.at(\"" << child.name << "\").as_map(), ids)";
                 }
                 if (type == OptLink || type == Link) {
                     links.push_back(child);
@@ -636,6 +657,47 @@ static void generate_visitor_base_class(
     // Print class header.
     format_doc(
         header,
+        "Internal class for implementing the visitor pattern.");
+    header << "class VisitorBase {" << std::endl;
+    header << "public:" << std::endl << std::endl;
+
+    // Virtual destructor.
+    format_doc(header, "Virtual destructor for proper cleanup.", "    ");
+    header << "    virtual ~VisitorBase() = default;" << std::endl << std::endl;
+
+    // Raw visit methods are protected.
+    header << "protected:" << std::endl << std::endl;
+    header << "    friend class Node;" << std::endl;
+    for (auto &node : nodes) {
+        header << "    friend class " << node->title_case_name << ";" << std::endl;
+    }
+    header << std::endl;
+
+
+    // Fallback for any kind of node.
+    format_doc(header, "Internal visitor function for nodes of any type.", "    ");
+    header << "    virtual void raw_visit_node(Node &node, void *retval) = 0;" << std::endl << std::endl;
+
+    // Functions for all node types.
+    for (auto &node : nodes) {
+        format_doc(header, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
+        header << "    virtual void raw_visit_" << node->snake_case_name;
+        header << "(" << node->title_case_name << " &node, void *retval) = 0;" << std::endl << std::endl;
+    }
+
+    header << "};" << std::endl << std::endl;
+}
+
+// Generate the templated visitor class.
+static void generate_visitor_class(
+    std::ofstream &header,
+    std::ofstream &source,
+    Nodes &nodes
+) {
+
+    // Print class header.
+    format_doc(
+        header,
         "Base class for the visitor pattern for the tree.\n\n"
         "To operate on the tree, derive from this class, describe your "
         "operation by overriding the appropriate visit functions. and then "
@@ -643,16 +705,26 @@ static void generate_visitor_base_class(
         "the node-specific functions fall back to the more generic functions, "
         "eventually leading to `visit_node()`, which must be implemented with "
         "the desired behavior for unknown nodes.");
-    header << "class Visitor {" << std::endl;
-    header << "public:" << std::endl << std::endl;
+    header << "template <typename T>" << std::endl;
+    header << "class Visitor : public VisitorBase {" << std::endl;
+    header << "protected:" << std::endl << std::endl;
 
-    // Virtual destructor.
-    format_doc(header, "Virtual destructor for proper cleanup.", "    ");
-    header << "    virtual ~Visitor() {};" << std::endl << std::endl;
+    // Internal function for any kind of node.
+    format_doc(header, "Internal visitor function for nodes of any type.", "    ");
+    header << "    void raw_visit_node(Node &node, void *retval) override;" << std::endl << std::endl;
+
+    // Internal functions for all node types.
+    for (auto &node : nodes) {
+        format_doc(header, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
+        header << "    void raw_visit_" << node->snake_case_name;
+        header << "(" << node->title_case_name << " &node, void *retval) override;" << std::endl << std::endl;
+    }
+
+    header << "public:" << std::endl << std::endl;
 
     // Fallback for any kind of node.
     format_doc(header, "Fallback function for nodes of any type.", "    ");
-    header << "    virtual void visit_node(Node &node) = 0;" << std::endl << std::endl;
+    header << "    virtual T visit_node(Node &node) = 0;" << std::endl << std::endl;
 
     // Functions for all node types.
     for (auto &node : nodes) {
@@ -663,20 +735,67 @@ static void generate_visitor_base_class(
             doc = "Fallback function for `" + node->title_case_name + "` nodes.";
         }
         format_doc(header, doc, "    ");
-        header << "    virtual void visit_" << node->snake_case_name;
-        header << "(" << node->title_case_name << " &node);" << std::endl << std::endl;
-        format_doc(source, doc);
-        source << "void Visitor::visit_" << node->snake_case_name;
-        source << "(" << node->title_case_name << " &node) {" << std::endl;
+        header << "    virtual T visit_" << node->snake_case_name;
+        header << "(" << node->title_case_name << " &node) {" << std::endl;
         if (node->parent) {
-            source << "    visit_" << node->parent->snake_case_name << "(node);" << std::endl;
+            header << "        visit_" << node->parent->snake_case_name << "(node);" << std::endl;
         } else {
-            source << "    visit_node(node);" << std::endl;
+            header << "        visit_node(node);" << std::endl;
         }
-        source << "}" << std::endl << std::endl;
+        header << "    }" << std::endl << std::endl;
     }
 
     header << "};" << std::endl << std::endl;
+
+    // Internal function for any kind of node.
+    format_doc(header, "Internal visitor function for nodes of any type.", "    ");
+    header << "    template <typename T>" << std::endl;
+    header << "    void Visitor<T>::raw_visit_node(Node &node, void *retval) {" << std::endl;
+    header << "        if (retval == nullptr) {" << std::endl;
+    header << "            this->visit_node(node);" << std::endl;
+    header << "        } else {" << std::endl;
+    header << "            *((T*)retval) = this->visit_node(node);" << std::endl;
+    header << "        };" << std::endl;
+    header << "    }" << std::endl << std::endl;
+
+    format_doc(header, "Internal visitor function for nodes of any type.", "    ");
+    header << "    template <>" << std::endl;
+    header << "    void Visitor<void>::raw_visit_node(Node &node, void *retval);" << std::endl << std::endl;
+
+    format_doc(source, "Internal visitor function for nodes of any type.", "    ");
+    source << "    template <>" << std::endl;
+    source << "    void Visitor<void>::raw_visit_node(Node &node, void *retval) {" << std::endl;
+    source << "        (void)retval;" << std::endl;
+    source << "        this->visit_node(node);" << std::endl;
+    source << "    }" << std::endl << std::endl;
+
+    // Internal functions for all node types.
+    for (auto &node : nodes) {
+        format_doc(header, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
+        header << "    template <typename T>" << std::endl;
+        header << "    void Visitor<T>::raw_visit_" << node->snake_case_name;
+        header << "(" << node->title_case_name << " &node, void *retval) {" << std::endl;
+        header << "        if (retval == nullptr) {" << std::endl;
+        header << "            this->visit_" << node->snake_case_name << "(node);" << std::endl;
+        header << "        } else {" << std::endl;
+        header << "            *((T*)retval) = this->visit_" << node->snake_case_name << "(node);" << std::endl;
+        header << "        };" << std::endl;
+        header << "    }" << std::endl << std::endl;
+
+        format_doc(header, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
+        header << "    template <>" << std::endl;
+        header << "    void Visitor<void>::raw_visit_" << node->snake_case_name;
+        header << "(" << node->title_case_name << " &node, void *retval);" << std::endl << std::endl;
+
+        format_doc(source, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
+        source << "    template <>" << std::endl;
+        source << "    void Visitor<void>::raw_visit_" << node->snake_case_name;
+        source << "(" << node->title_case_name << " &node, void *retval) {" << std::endl;
+        source << "        (void)retval;" << std::endl;
+        source << "        this->visit_" << node->snake_case_name << "(node);" << std::endl;
+        source << "    }" << std::endl << std::endl;
+    }
+
 }
 
 // Generate the recursive visitor class.
@@ -692,7 +811,7 @@ static void generate_recursive_visitor_class(
         "Visitor base class defaulting to DFS traversal.\n\n"
         "The visitor functions for nodes with children default to DFS "
         "traversal instead of falling back to more generic node types.");
-    header << "class RecursiveVisitor : public Visitor {" << std::endl;
+    header << "class RecursiveVisitor : public Visitor<void> {" << std::endl;
     header << "public:" << std::endl << std::endl;
 
     // Functions for all node types.
@@ -1108,6 +1227,8 @@ int main(
     for (auto &node : nodes) {
         header << "class " << node->title_case_name << ";" << std::endl;
     }
+    header << "class VisitorBase;" << std::endl;
+    header << "template <typename T = void>" << std::endl;
     header << "class Visitor;" << std::endl;
     header << "class RecursiveVisitor;" << std::endl;
     header << "class Dumper;" << std::endl;
@@ -1142,8 +1263,29 @@ int main(
 
     // Generate the visitor classes.
     generate_visitor_base_class(header, source, nodes);
+    generate_visitor_class(header, source, nodes);
     generate_recursive_visitor_class(header, source, nodes);
     generate_dumper_class(header, source, nodes, specification.source_location);
+
+    // Generate the templated visit method and its specialization for void
+    // return type.
+    format_doc(header, "Visit this object.");
+    header << "template <typename T>" << std::endl;
+    header << "T Node::visit(Visitor<T> &visitor) {" << std::endl;
+    header << "    T retval;" << std::endl;
+    header << "    this->visit_internal(visitor, &retval);" << std::endl;
+    header << "    return retval;" << std::endl;
+    header << "}" << std::endl << std::endl;
+
+    format_doc(header, "Visit this object.");
+    header << "template <>" << std::endl;
+    header << "void Node::visit(Visitor<void> &visitor);" << std::endl << std::endl;
+
+    format_doc(source, "Visit this object.");
+    source << "template <>" << std::endl;
+    source << "void Node::visit(Visitor<void> &visitor) {" << std::endl;
+    source << "    this->visit_internal(visitor);" << std::endl;
+    source << "}" << std::endl << std::endl;
 
     // Close the namespaces.
     for (auto name_it = specification.namespaces.rbegin(); name_it != specification.namespaces.rend(); name_it++) {
