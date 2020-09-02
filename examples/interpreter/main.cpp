@@ -109,7 +109,7 @@ int main() {
     //   { $$ = new value::Literal(std::stoi($1)); }
     //
     //   // Action for a reference:
-    //   { $$ = new value::Reference($1); /* and deallocate $1 */ }
+    //   { $$ = new value::Reference($1); /* and deallocate $1, assuming it's a char* */ }
     //
     //   // Action for a assignment:
     //   { $$ = new value::Assignment(); $$->lhs.set_raw($1); $$->rhs.set_raw($3); }
@@ -193,6 +193,42 @@ int main() {
     // passed to the node objects because they refer to the same piece of
     // memory. In practice, though, you would do this during the parser actions,
     // just after constructing them.
+    //
+    // When serializing and deserializing, annotations are ignored by default;
+    // they can be of any type whatsoever, and C++ can't dynamically introspect
+    // which types can be (de)serialized and which can't be, after all. So even
+    // though the example SourceLocation object extends
+    // ``tree::annotatable::Serializable``, this doesn't work automagically.
+    auto node = tree::base::make<value::Literal>(2);
+    node->set_annotation(primitives::SourceLocation("test", 1, 1));
+    std::string cbor = tree::base::serialize(node);
+    auto node2 = tree::base::deserialize<value::Literal>(cbor);
+    ASSERT(!node2->has_annotation<primitives::SourceLocation>());
+
+    // However, you *can* register annotations types for serialization and
+    // deserialization if you want to through the
+    // ``tree::annotatable::serdes_registry`` singleton. After that, it will
+    // work.
+    tree::annotatable::serdes_registry.add<primitives::SourceLocation>("loc");
+    cbor = tree::base::serialize(node);
+    node2 = tree::base::deserialize<value::Literal>(cbor);
+    ASSERT(node2->has_annotation<primitives::SourceLocation>());
+    MARKER
+
+    // Two ``add()`` methods are provided. The one used here assumes that the
+    // type has an appropriate ``serialize()`` method and an appropriate
+    // constructor for deserialization, the other allows you to specify them
+    // manually using ``std::function``s. The name is optional but strongly
+    // recommended; if not used, a C++-compiler-specific identifier will be used
+    // for the type.
+    //
+    // Similar to links, annotations aren't copied as you might expect by
+    // ``copy()`` and ``clone()``. Specifically, annotations are stored as
+    // ``std::shared_ptr``s to unknown C++ objects, and therefore copying a
+    // node only copies the references to the annotations. To fully clone
+    // annotations, you'll either have to serialize and deserialize the node
+    // they belong to (after registering with ``serdes_registry`` of course), or
+    // clone them manually.
 
     // Visitor pattern
     // ===============

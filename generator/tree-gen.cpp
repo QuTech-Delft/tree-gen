@@ -625,6 +625,7 @@ static void generate_node_class(
                 source << "        ids.register_link(node->" << link.name << ", link.as_int());" << std::endl;
                 source << "    }" << std::endl;
             }
+            source << "    node->deserialize_annotations(map);" << std::endl;
             source << "    return node;" << std::endl;
             source << "}" << std::endl << std::endl;
         } else {
