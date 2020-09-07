@@ -64,8 +64,8 @@
 
 /* Tokens */
 %token <str> DOCSTRING
-%token <str> INCLUDE SRC_INCLUDE
-%token SOURCE HEADER TREE_NS INIT_FN SERDES_FNS SOURCE_LOC
+%token <str> INCLUDE SRC_INCLUDE PY_INCLUDE
+%token SOURCE HEADER PYTHON TREE_NS INIT_FN SERDES_FNS SOURCE_LOC
 %token NAMESPACE NAMESPACE_SEP
 %token ERROR
 %token MAYBE ONE ANY MANY OLINK LINK EXT
@@ -112,12 +112,14 @@ Node            : Documentation IDENT '{'                                       
 Root            :                                                               {}
                 | Root Documentation SOURCE                                     { TRY specification.set_source_doc(*$2); delete $2; CATCH }
                 | Root Documentation HEADER                                     { TRY specification.set_header_doc(*$2); delete $2; CATCH }
+                | Root Documentation PYTHON                                     { TRY specification.set_python_doc(*$2); delete $2; CATCH }
                 | Root TREE_NS Identifier                                       { TRY specification.set_tree_namespace(*$3); delete $3; CATCH }
                 | Root INIT_FN Identifier                                       { TRY specification.set_initialize_function(*$3); delete $3; CATCH }
                 | Root SERDES_FNS Identifier Identifier                         { TRY specification.set_serdes_functions(*$3, *$4); delete $3; delete $4; CATCH }
                 | Root SOURCE_LOC Identifier                                    { TRY specification.set_source_location(*$3); delete $3; CATCH }
                 | Root INCLUDE                                                  { TRY specification.add_include(std::string($2)); std::free($2); CATCH }
                 | Root SRC_INCLUDE                                              { TRY specification.add_src_include(std::string($2 + 4)); std::free($2); CATCH }
+                | Root PY_INCLUDE                                               { TRY specification.add_python_include(std::string($2)); std::free($2); CATCH }
                 | Root Documentation NAMESPACE IDENT                            { TRY specification.add_namespace(std::string($4), *$2); delete $2; std::free($4); CATCH }
                 | Root Node '}'                                                 {}
                 ;

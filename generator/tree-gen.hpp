@@ -196,6 +196,10 @@
  *    any docstring above the directive is copied into the file as file-level
  *    doxygen documentation.
  *
+ *  - `python`: used to specify documentation for the generated Python file (if
+ *    enabled via the command line); any docstring above the directive is copied
+ *    into the Python file's docstring.
+ *
  *  - `tree_namespace <namespace::path>`: the namespace that the
  *    Base and edge classes live in.
  *
@@ -223,19 +227,14 @@
  *  - `src_include "<path>"`: like `include`, but adds to the top of the
  *    generated C++ file only.
  *
+ *  - `import ...`, `from ... import ...`: adds Python import statements to the
+ *    top of the generated module.
+ *
  *  - `namespace <name>`: used to specify the namespace for the generated tree
  *    classes. As in C++, you need multiple of these to specify the full path.
  *    The docstring for the *first* annotation of this type that has a
  *    docstring in front is used to document the innermost namespace
  *    javadoc-style for Doxygen documentation.
- *
- * TODO:
- *
- *  - `python`: enables Python module generation and specifies the contents of
- *    the Python module `__doc__` value.
- *
- *  - `import ...`, `from ...`: adds Python import statements to the top of the
- *    generated module.
  *
  * \section apis Generated APIs
  *
@@ -795,6 +794,11 @@ public:
     std::string header_doc;
 
     /**
+     * Python file documentation.
+     */
+    std::string python_doc;
+
+    /**
      * The include statements to stick at the top of the header file.
      */
     std::vector<std::string> includes;
@@ -803,6 +807,11 @@ public:
      * The include statements to stick at the top of the source file.
      */
     std::vector<std::string> src_includes;
+
+    /**
+     * The include statements to stick at the top of the Python file.
+     */
+    std::vector<std::string> python_includes;
 
     /**
      * Namespace documentation.
@@ -862,6 +871,13 @@ public:
     }
 
     /**
+     * Sets the Python file documentation.
+     */
+    void set_python_doc(const std::string &doc) {
+        python_doc = doc;
+    }
+
+    /**
      * Sets the tree namespace.
      */
     void set_tree_namespace(const std::string &name_space) {
@@ -914,6 +930,13 @@ public:
      */
     void add_src_include(const std::string &include) {
         src_includes.push_back(include);
+    }
+
+    /**
+     * Adds an import statement to the Python file.
+     */
+    void add_python_include(const std::string &include) {
+        python_includes.push_back(include);
     }
 
     /**
