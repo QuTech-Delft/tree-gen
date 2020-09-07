@@ -1301,9 +1301,9 @@ int main(
     for (auto &name : specification.namespaces) {
         name_space += "::" + name;
     }
-    format_doc(header, "Stream << overload for AST nodes (writes debug dump).");
+    format_doc(header, "Stream << overload for tree nodes (writes debug dump).");
     header << "std::ostream& operator<<(std::ostream& os, const " << name_space << "::Node& object);" << std::endl << std::endl;
-    format_doc(source, "Stream << overload for AST nodes (writes debug dump).");
+    format_doc(source, "Stream << overload for tree nodes (writes debug dump).");
     source << "std::ostream& operator<<(std::ostream& os, const " << name_space << "::Node& object) {" << std::endl;
     source << "    const_cast<" << name_space << "::Node&>(object).dump(os);" << std::endl;
     source << "    return os;" << std::endl;

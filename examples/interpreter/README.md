@@ -1,10 +1,10 @@
-# Directory tree example
+# Interpreter example
 
-This example illustrates the tree system with a Windows-like directory tree
-structure. The `System` root node consists of one or more drives, each of which
-has a drive letter and a root directory with named files and subdirectories. To
-make things a little more interesting, a symlink-like "mount" is added as a file
-type, which links to another directory.
+This example discusses some of the more advanced features of tree-gen, using an
+interpreter for a very simple language as an example. This is, however, not a
+completely integrated or even functional interpreter; we just go over some of
+the concepts and things you may run into when you would make such an
+interpreter.
 
 Refer to the comments in `main.cpp` or the ReadTheDocs page generated from this
 example and its output for more information.
