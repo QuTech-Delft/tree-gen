@@ -592,10 +592,19 @@ struct ChildNode {
     std::shared_ptr<NodeType> node_type;
 
     /**
-     * The primitive type name, if any (depends on type). If type is not
-     * `Prim`, this is used for storing the node name before name resolution.
+     * The primitive type name, if any (depends on type). This includes the
+     * edge template instantiation for external nodes. If type is not `Prim`,
+     * this is used for storing the node name before name resolution.
      */
     std::string prim_type;
+
+    /**
+     * The primitive type name, if any (depends on type). This is intended for
+     * Python, and thus does not have the edge template instantiation (because
+     * Python doesn't have templates, and the edges are implicit rather than
+     * explicit classes) and uses . for namespace separation rather than ::.
+     */
+    std::string py_prim_type;
 
     /**
      * Class member name.
@@ -659,14 +668,7 @@ struct NodeType {
     /**
      * Gathers all child nodes, including those in parent classes.
      */
-    std::vector<ChildNode> all_children() {
-        std::vector<ChildNode> children = this->children;
-        if (parent) {
-            auto from_parent = parent->all_children();
-            children.insert(children.end(), from_parent.begin(), from_parent.end());
-        }
-        return children;
-    }
+    std::vector<ChildNode> all_children();
 
 };
 
@@ -674,6 +676,12 @@ struct NodeType {
  * List of nodes.
  */
 using Nodes = std::vector<std::shared_ptr<NodeType>>;
+
+/**
+ * Convenience method for replacing all occurrences of a substring in a string
+ * with another string.
+ */
+std::string replace_all(std::string str, const std::string& from, const std::string& to);
 
 /**
  * Convenience class for constructing a node.
@@ -689,30 +697,12 @@ public:
     /**
      * Construct a node with the given snake_case name and class documentation.
      */
-    NodeBuilder(const std::string &name, const std::string &doc="") {
-        node = std::make_shared<NodeType>();
-        node->snake_case_name = name;
-        node->doc = doc;
-        node->is_error_marker = false;
-
-        // Generate title case name.
-        auto snake_ss = std::stringstream(name);
-        auto title_ss = std::ostringstream();
-        std::string token;
-        while (std::getline(snake_ss, token, '_')) {
-            title_ss << (char)std::toupper(token[0]) << token.substr(1);
-        }
-        node->title_case_name = title_ss.str();
-    }
+    NodeBuilder(const std::string &name, const std::string &doc="");
 
     /**
      * Marks this node as deriving from the given node type.
      */
-    NodeBuilder *derive_from(std::shared_ptr<NodeType> parent) {
-        node->parent = parent;
-        parent->derived.push_back(node);
-        return this;
-    }
+    NodeBuilder *derive_from(std::shared_ptr<NodeType> parent);
 
     /**
      * Adds a child node. `type` should be one of the edge types.
@@ -722,16 +712,7 @@ public:
         const std::string &node_name,
         const std::string &name,
         const std::string &doc = ""
-    ) {
-        auto child = ChildNode();
-        child.type = type;
-        child.prim_type = node_name;
-        child.name = name;
-        child.doc = doc;
-        child.ext_type = type;
-        node->children.push_back(std::move(child));
-        return this;
-    }
+    );
 
     /**
      * Adds a child primitive.
@@ -741,32 +722,12 @@ public:
         const std::string &name,
         const std::string &doc = "",
         AttributeType type = Prim
-    ) {
-        auto child = ChildNode();
-        child.type = Prim;
-        switch (type) {
-            case Maybe:   child.prim_type = "Maybe<" + prim + ">"; break;
-            case One:     child.prim_type = "One<" + prim + ">"; break;
-            case Any:     child.prim_type = "Any<" + prim + ">"; break;
-            case Many:    child.prim_type = "Many<" + prim + ">"; break;
-            case OptLink: child.prim_type = "OptLink<" + prim + ">"; break;
-            case Link:    child.prim_type = "Link<" + prim + ">"; break;
-            default:      child.prim_type = prim; break;
-        }
-        child.name = name;
-        child.doc = doc;
-        child.ext_type = type;
-        node->children.push_back(std::move(child));
-        return this;
-    }
+    );
 
     /**
      * Indicate that this node marks a recovered parse error.
      */
-    NodeBuilder *mark_error() {
-        node->is_error_marker = true;
-        return this;
-    }
+    NodeBuilder *mark_error();
 
 };
 
@@ -859,129 +820,67 @@ public:
     /**
      * Sets the source file documentation.
      */
-    void set_source_doc(const std::string &doc) {
-        source_doc = doc;
-    }
+    void set_source_doc(const std::string &doc);
 
     /**
      * Sets the header file documentation.
      */
-    void set_header_doc(const std::string &doc) {
-        header_doc = doc;
-    }
+    void set_header_doc(const std::string &doc);
 
     /**
      * Sets the Python file documentation.
      */
-    void set_python_doc(const std::string &doc) {
-        python_doc = doc;
-    }
+    void set_python_doc(const std::string &doc);
 
     /**
      * Sets the tree namespace.
      */
-    void set_tree_namespace(const std::string &name_space) {
-        if (!tree_namespace.empty()) {
-            throw std::runtime_error("duplicate tree namespace declaration");
-        }
-        tree_namespace = name_space;
-    }
+    void set_tree_namespace(const std::string &name_space);
 
     /**
      * Sets the initialization function.
      */
-    void set_initialize_function(const std::string &init_fn) {
-        if (!initialize_function.empty()) {
-            throw std::runtime_error("duplicate initialization function declaration");
-        }
-        initialize_function = init_fn;
-    }
+    void set_initialize_function(const std::string &init_fn);
 
     /**
      * Sets the serialization/deserialization functions.
      */
-    void set_serdes_functions(const std::string &ser_fn, const std::string &des_fn) {
-        if (!serialize_fn.empty()) {
-            throw std::runtime_error("duplicate serialize/deserialize function declaration");
-        }
-        serialize_fn = ser_fn;
-        deserialize_fn = des_fn;
-    }
+    void set_serdes_functions(const std::string &ser_fn, const std::string &des_fn);
 
     /**
      * Sets the source location object.
      */
-    void set_source_location(const std::string &ident) {
-        if (!source_location.empty()) {
-            throw std::runtime_error("duplicate source location object declaration");
-        }
-        source_location = ident;
-    }
+    void set_source_location(const std::string &ident);
 
     /**
      * Adds an include statement to the header file.
      */
-    void add_include(const std::string &include) {
-        includes.push_back(include);
-    }
+    void add_include(const std::string &include);
 
     /**
      * Adds an include statement to the source file.
      */
-    void add_src_include(const std::string &include) {
-        src_includes.push_back(include);
-    }
+    void add_src_include(const std::string &include);
 
     /**
      * Adds an import statement to the Python file.
      */
-    void add_python_include(const std::string &include) {
-        python_includes.push_back(include);
-    }
+    void add_python_include(const std::string &include);
 
     /**
      * Adds a namespace level.
      */
-    void add_namespace(const std::string &name_space, const std::string &doc = "") {
-        namespaces.push_back(name_space);
-        if (!doc.empty()) {
-            namespace_doc = doc;
-        }
-    }
+    void add_namespace(const std::string &name_space, const std::string &doc = "");
 
     /**
      * Adds the given node.
      */
-    void add_node(std::shared_ptr<NodeBuilder> &node_builder) {
-        auto name = node_builder->node->snake_case_name;
-        if (builders.count(name)) {
-            throw std::runtime_error("duplicate node name " + name);
-        }
-        builders.insert(std::make_pair(name, node_builder));
-    }
+    void add_node(std::shared_ptr<NodeBuilder> &node_builder);
 
     /**
      * Checks for errors, resolves node names, and builds the nodes vector.
      */
-    void build() {
-        if (initialize_function.empty()) {
-            throw std::runtime_error("initialization function not specified");
-        }
-        for (auto &it : builders) {
-            for (auto &child : it.second->node->children) {
-                if (child.type != Prim) {
-                    auto name = child.prim_type;
-                    child.prim_type = "";
-                    auto nb_it = builders.find(name);
-                    if (nb_it == builders.end()) {
-                        throw std::runtime_error("use of undefined node " + name);
-                    }
-                    child.node_type = nb_it->second->node;
-                }
-            }
-            nodes.push_back(it.second->node);
-        }
-    }
+    void build();
 
 };
 

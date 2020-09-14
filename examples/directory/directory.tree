@@ -11,6 +11,7 @@ tree_namespace tree::base
 
 // Include primitive types.
 include "primitives.hpp"
+import primitives
 
 // Initialization function to use to construct default values for the tree base
 // classes and primitives.

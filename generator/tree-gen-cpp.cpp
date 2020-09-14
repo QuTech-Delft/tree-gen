@@ -907,7 +907,7 @@ void generate_dumper_class(
         source << "void Dumper::visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node) {" << std::endl;
         source << "    write_indent();" << std::endl;
-        auto children = node->all_children();
+        auto attributes = node->all_children();
         source << "    out << \"" << node->title_case_name << "(\";" << std::endl;
         if (!source_location.empty()) {
             source << "    if (auto loc = node.get_annotation_ptr<" << source_location << ">()) {" << std::endl;
@@ -915,24 +915,25 @@ void generate_dumper_class(
             source << "    }" << std::endl;
         }
         source << "    out << std::endl;" << std::endl;
-        if (!children.empty()) {
+        if (!attributes.empty()) {
             source << "    indent++;" << std::endl;
-            for (auto &child : children) {
+            for (auto &attrib : attributes) {
+                AttributeType type = (attrib.type == Prim) ? attrib.ext_type : attrib.type;
                 source << "    write_indent();" << std::endl;
-                source << "    out << \"" << child.name;
-                if (child.type == Link || child.type == OptLink) {
+                source << "    out << \"" << attrib.name;
+                if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
                     source << " --> ";
                 } else {
                     source << ": ";
                 }
                 source << "\";" << std::endl;
-                switch (child.ext_type) {
+                switch (attrib.ext_type) {
                     case Maybe:
                     case One:
                     case OptLink:
                     case Link:
-                        source << "    if (node." << child.name << ".empty()) {" << std::endl;
-                        if (child.type == One || child.type == Link) {
+                        source << "    if (node." << attrib.name << ".empty()) {" << std::endl;
+                        if (attrib.ext_type == One || attrib.ext_type == Link) {
                             source << "        out << \"!MISSING\" << std::endl;" << std::endl;
                         } else {
                             source << "        out << \"-\" << std::endl;" << std::endl;
@@ -940,21 +941,27 @@ void generate_dumper_class(
                         source << "    } else {" << std::endl;
                         source << "        out << \"<\" << std::endl;" << std::endl;
                         source << "        indent++;" << std::endl;
-                        if (child.type == Prim) {
-                            source << "        if (!node." << child.name << ".empty()) {" << std::endl;
-                            source << "            node." << child.name << "->dump(out, indent);" << std::endl;
-                            source << "        }" << std::endl;
-                        } else if (child.type == Link || child.type == OptLink) {
+                        if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
                             source << "        if (!in_link) {" << std::endl;
                             source << "            in_link = true;" << std::endl;
-                            source << "            node." << child.name << ".visit(*this);" << std::endl;
+                            if (attrib.type == Prim) {
+                                source << "            if (!node." << attrib.name << ".empty()) {" << std::endl;
+                                source << "                node." << attrib.name << "->dump(out, indent);" << std::endl;
+                                source << "            }" << std::endl;
+                            } else {
+                                source << "            node." << attrib.name << ".visit(*this);" << std::endl;
+                            }
                             source << "            in_link = false;" << std::endl;
                             source << "        } else {" << std::endl;
                             source << "            write_indent();" << std::endl;
                             source << "            out << \"...\" << std::endl;" << std::endl;
                             source << "        }" << std::endl;
+                        } else if (attrib.type == Prim) {
+                            source << "        if (!node." << attrib.name << ".empty()) {" << std::endl;
+                            source << "            node." << attrib.name << "->dump(out, indent);" << std::endl;
+                            source << "        }" << std::endl;
                         } else {
-                            source << "        node." << child.name << ".visit(*this);" << std::endl;
+                            source << "        node." << attrib.name << ".visit(*this);" << std::endl;
                         }
                         source << "        indent--;" << std::endl;
                         source << "        write_indent();" << std::endl;
@@ -964,8 +971,8 @@ void generate_dumper_class(
 
                     case Any:
                     case Many:
-                        source << "    if (node." << child.name << ".empty()) {" << std::endl;
-                        if (child.type == One) {
+                        source << "    if (node." << attrib.name << ".empty()) {" << std::endl;
+                        if (attrib.ext_type == Many) {
                             source << "        out << \"!MISSING\" << std::endl;" << std::endl;
                         } else {
                             source << "        out << \"[]\" << std::endl;" << std::endl;
@@ -973,9 +980,9 @@ void generate_dumper_class(
                         source << "    } else {" << std::endl;
                         source << "        out << \"[\" << std::endl;" << std::endl;
                         source << "        indent++;" << std::endl;
-                        source << "        for (auto &sptr : node." << child.name << ") {" << std::endl;
+                        source << "        for (auto &sptr : node." << attrib.name << ") {" << std::endl;
                         source << "            if (!sptr.empty()) {" << std::endl;
-                        if (child.type == Prim) {
+                        if (attrib.type == Prim) {
                             source << "                sptr->dump(out, indent);" << std::endl;
                         } else {
                             source << "                sptr->visit(*this);" << std::endl;
@@ -992,7 +999,7 @@ void generate_dumper_class(
                         break;
 
                     case Prim:
-                        source << "    out << node." << child.name << " << std::endl;" << std::endl;
+                        source << "    out << node." << attrib.name << " << std::endl;" << std::endl;
                         break;
 
                 }

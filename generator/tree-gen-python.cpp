@@ -11,18 +11,6 @@ namespace tree_gen {
 namespace python {
 
 /**
- * Replaces all occurrences of `from` in `str` to `to`.
- */
-std::string replace_all(std::string str, const std::string& from, const std::string& to) {
-    size_t start_pos = 0;
-    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
-        str.replace(start_pos, from.length(), to);
-        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
-    }
-    return str;
-}
-
-/**
  * Formats a Python docstring.
  */
 void format_doc(
@@ -150,7 +138,7 @@ void generate_node_class(
         bool is_many = attrib.type == Many || (attrib.type == Prim && attrib.ext_type == Many);
         bool is_prim = attrib.type == Prim && attrib.ext_type == Prim;
         bool is_any_or_many = is_any || is_many;
-        std::string type = (attrib.type == Prim) ? replace_all(attrib.prim_type, "::", ".") : attrib.node_type->title_case_name;
+        std::string type = (attrib.type == Prim) ? attrib.py_prim_type : attrib.node_type->title_case_name;
 
         if (is_any_or_many) {
             type = "Multi" + type;
@@ -166,17 +154,17 @@ void generate_node_class(
 
         // Setter. Assigning None is the same as deleting.
         output << "    @" << attrib.name << ".setter" << std::endl;
-        output << "    def " << attrib.name << "(self, value):" << std::endl;
-        output << "        if value is None:" << std::endl;
+        output << "    def " << attrib.name << "(self, val):" << std::endl;
+        output << "        if val is None:" << std::endl;
         output << "            del self." << attrib.name << std::endl;
         output << "            return" << std::endl;
-        output << "        if not isinstance(" << type << ", value):" << std::endl;
+        output << "        if not isinstance(" << type << ", val):" << std::endl;
         output << "            # Try to \"typecast\" if this isn't an obvious mistake." << std::endl;
-        output << "            if isinstance(Node, value):" << std::endl;
+        output << "            if isinstance(Node, val):" << std::endl;
         output << "                raise TypeError('" << attrib.name << " must be of type " << type << "')" << std::endl;
-        output << "            value = " << type << "(value)" << std::endl;
+        output << "            val = " << type << "(val)" << std::endl;
         output << "        self._attr_" << attrib.name << " = ";
-        output << type << "(value)" << std::endl << std::endl;
+        output << type << "(val)" << std::endl << std::endl;
 
         // Deleter. Doesn't actually delete, but rather replaces with the
         // default value.
@@ -192,13 +180,124 @@ void generate_node_class(
 
     }
 
+    // Print equality function.
+    if (node.derived.empty()) {
+        output << "    def __eq__(self, other):" << std::endl;
+        format_doc(output, "Equality operator. Ignores annotations!", "        ");
+        output << "        if not isinstance(other, " << node.title_case_name << "):" << std::endl;
+        output << "            return False" << std::endl;
+        for (const auto &attrib : all_children) {
+            AttributeType type = (attrib.type == Prim) ? attrib.ext_type : attrib.type;
+            switch (type) {
+                case Maybe:
+                case One:
+                case Any:
+                case Many:
+                case Prim:
+                    output << "        if self." << attrib.name << " != other." << attrib.name << ":" << std::endl;
+                    break;
+                case Link:
+                case OptLink:
+                    output << "        if self." << attrib.name << " is not other." << attrib.name << ":" << std::endl;
+                    break;
+            }
+            output << "            return False" << std::endl;
+        }
+        output << "        return True" << std::endl << std::endl;
+    }
+
+    // Print dump function.
+    if (node.derived.empty()) {
+        output << "    def dump(self, indent=0, annotations=None, links=1):" << std::endl;
+        format_doc(output,
+                   "Returns a debug representation of this tree as a "
+                   "multiline string. indent is the number of double spaces "
+                   "prefixed before every line. annotations, if specified, "
+                   "must be a set-like object containing the key strings of "
+                   "the annotations that are to be printed. links specifies "
+                   "the maximum link recursion depth.", "        ");
+        output << "        s = ['  '*indent]" << std::endl;
+        output << "        s.append('" << node.title_case_name << "(')" << std::endl;
+        output << "        if annotations is None:" << std::endl;
+        output << "            annotations = []" << std::endl;
+        output << "        for key in annotations:" << std::endl;
+        output << "            if key in self:" << std::endl;
+        output << "                s.append(' # {}: {}'.format(key, self[key]))" << std::endl;
+        output << "        s.append('\\n')" << std::endl;
+        if (!all_children.empty()) {
+            output << "        indent += 1" << std::endl;
+            for (auto &attrib : all_children) {
+                AttributeType type = (attrib.type == Prim) ? attrib.ext_type : attrib.type;
+                output << "        s.append('  '*indent)" << std::endl;
+                output << "        s.append('" << attrib.name;
+                if (type == Link || type == OptLink) {
+                    output << " --> ";
+                } else {
+                    output << ": ";
+                }
+                output << "')" << std::endl;
+                switch (type) {
+                    case Maybe:
+                    case One:
+                    case OptLink:
+                    case Link:
+                        output << "        if self." << attrib.name << " is None:" << std::endl;
+                        if (type == One || type == Link) {
+                            output << "            s.append('!MISSING\\n')" << std::endl;
+                        } else {
+                            output << "            s.append('-\\n')" << std::endl;
+                        }
+                        output << "        else:" << std::endl;
+                        output << "            s.append('<\\n')" << std::endl;
+                        if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
+                            output << "            if links:" << std::endl;
+                            output << "                s.append(self." << attrib.name << ".dump(indent + 1, annotations, links - 1) + '\\n')" << std::endl;
+                            output << "            else:" << std::endl;
+                            output << "                s.append('  '*(indent+1) + '...\\n')" << std::endl;
+                        } else {
+                            output << "            s.append(self." << attrib.name << ".dump(indent + 1, annotations, links) + '\\n')" << std::endl;
+                        }
+                        output << "            s.append('  '*indent + '>\\n')" << std::endl;
+                        break;
+
+                    case Any:
+                    case Many:
+                        output << "        if not self." << attrib.name << ":" << std::endl;
+                        if (attrib.ext_type == Many) {
+                            output << "            s.append('!MISSING\\n')" << std::endl;
+                        } else {
+                            output << "            s.append('-\\n')" << std::endl;
+                        }
+                        output << "        else:" << std::endl;
+                        output << "            s.append('[\\n')" << std::endl;
+                        output << "            for child in self." << attrib.name << ":" << std::endl;
+                        output << "                s.append(self." << attrib.name << ".dump(indent + 1, annotations, links) + '\\n')" << std::endl;
+                        output << "            s.append('  '*indent + ']\\n')" << std::endl;
+                        break;
+
+                    case Prim:
+                        output << "        s.append(str(self." << attrib.name << ") + '\\n')" << std::endl;
+                        break;
+
+                }
+            }
+            output << "        indent -= 1" << std::endl;
+            output << "        s.append('  '*indent)" << std::endl;
+        }
+        output << "        s.append(')')" << std::endl;
+        output << "        return ''.join(s)" << std::endl << std::endl;
+        output << "    __str__ = dump" << std::endl;
+        output << "    __repr__ = dump" << std::endl << std::endl;
+    }
+
     // Print find_reachable() function.
     if (node.derived.empty()) {
         output << "    def find_reachable(self, id_map=None):" << std::endl;
-        format_doc(
-            output, "Returns a dictionary mapping Python id() values to "
-            "stable sequence numbers for all nodes in the tree rooted at this "
-            "node. If id_map is specified, found nodes are appended to it.", "        ");
+        format_doc(output,
+                    "Returns a dictionary mapping Python id() values to "
+                    "stable sequence numbers for all nodes in the tree rooted "
+                    "at this node. If id_map is specified, found nodes are "
+                    "appended to it.", "        ");
         output << "        if id_map is None:" << std::endl;
         output << "            id_map = {}" << std::endl;
         output << "        def add(node):" << std::endl;
@@ -232,12 +331,12 @@ void generate_node_class(
     // Print check_complete() function.
     if (node.derived.empty()) {
         output << "    def check_complete(self, id_map=None):" << std::endl;
-        format_doc(
-            output, "Raises NotWellFormed if the tree rooted at this "
-            "node is not well-formed. If id_map is specified, this tree is only a "
-            "subtree in the context of a larger tree, and id_map must be a dict "
-            "mapping from Python id() codes to tree indices for all reachable "
-            "nodes.", "        ");
+        format_doc(output,
+                   "Raises NotWellFormed if the tree rooted at this node "
+                   "is not well-formed. If id_map is specified, this tree is "
+                   "only a subtree in the context of a larger tree, and id_map "
+                   "must be a dict mapping from Python id() codes to tree "
+                   "indices for all reachable nodes.", "        ");
         output << "        if id_map is None:" << std::endl;
         output << "            id_map = self.find_reachable()" << std::endl;
         for (const auto &attrib : all_children) {
@@ -291,7 +390,21 @@ void generate_node_class(
             } else {
                 output << "," << std::endl;
             }
-            output << "            " << attrib.name << "=self._attr_" << attrib.name;
+            output << "            " << attrib.name << "=";
+            auto type = (attrib.type != Prim) ? attrib.type : attrib.ext_type;
+            switch (type) {
+                case Maybe:
+                case One:
+                case OptLink:
+                case Link:
+                case Prim:
+                    output << "self._attr_" << attrib.name;
+                    break;
+                case Any:
+                case Many:
+                    output << "self._attr_" << attrib.name << ".copy()";
+                    break;
+            }
         }
         output << std::endl << "        )" << std::endl << std::endl;
     }
@@ -299,7 +412,14 @@ void generate_node_class(
     // Print clone() function.
     if (node.derived.empty()) {
         output << "    def clone(self):" << std::endl;
-        format_doc(output, "Returns a deep copy of this node.", "        ");
+        format_doc(output,
+                   "Returns a deep copy of this node. This mimics the "
+                   "C++ interface, deficiencies with links included; that is, "
+                   "links always point to the original tree. If you're not "
+                   "cloning a subtree in a context where this is the desired "
+                   "behavior, you may want to use the copy.deepcopy() from the "
+                   "stdlib instead, which should copy links correctly.",
+                   "        ");
         output << "        return " << node.title_case_name << "(" << std::endl;
         bool first = true;
         for (const auto &attrib : all_children) {
@@ -308,15 +428,35 @@ void generate_node_class(
             } else {
                 output << "," << std::endl;
             }
-            output << "            " << attrib.name << "=self._attr_" << attrib.name;
-            if (attrib.type == Prim && attrib.ext_type == Prim) {
-                output << ".clone()";
+            output << "            " << attrib.name << "=";
+            auto type = (attrib.type != Prim) ? attrib.type : attrib.ext_type;
+            switch (type) {
+                case Maybe:
+                case One:
+                case Any:
+                case Many:
+                case Prim:
+                    output << "_cloned(self._attr_" << attrib.name << ")";
+                    break;
+                case OptLink:
+                case Link:
+                    output << "self._attr_" << attrib.name;
+                    break;
             }
         }
         output << std::endl << "        )" << std::endl << std::endl;
     }
 
     output << std::endl;
+
+    // Print Multi* class.
+    output << "class Multi" << node.title_case_name << "(_Multiple):" << std::endl;
+    auto doc = "Wrapper for an edge with multiple " + node.title_case_name + " objects.";
+    format_doc(output, doc, "    ");
+    output << std::endl;
+    output << "    _T = " << node.title_case_name << std::endl;
+    output << std::endl << std::endl;
+
 }
 
 /**
@@ -344,7 +484,7 @@ void generate(
     for (auto &include : specification.python_includes) {
         output << include << std::endl;
     }
-    output << std::endl << std::endl;
+    output << std::endl;
 
     // Write the classes that are always the same.
     output << R"PY(
@@ -370,21 +510,25 @@ class Node(object):
         if not isinstance(key, str):
             raise TypeError('indexing a node with something other than an '
                             'annotation key string')
-        return self._annot[id(key)]
+        return self._annot[key]
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, val):
         """Assigns the annotation object with the specified key."""
         if not isinstance(key, str):
             raise TypeError('indexing a node with something other than an '
                             'annotation key string')
-        self._annot[id(key)] = value
+        self._annot[key] = val
 
     def __delitem__(self, key):
         """Deletes the annotation object with the specified key."""
         if not isinstance(key, str):
             raise TypeError('indexing a node with something other than an '
                             'annotation key string')
-        del self._annot[id(key)]
+        del self._annot[key]
+
+    def __contains__(self, key):
+        """Returns whether an annotation exists for the specified key."""
+        return key in self._annot
 
     @staticmethod
     def find_reachable(self, id_map=None):
@@ -412,8 +556,8 @@ class Node(object):
 
          - all One, Link, and Many edges have (at least) one entry;
          - all the One entries internally stored by Any/Many have an entry;
-         - all Link and filled OptLink nodes link to a node that's reachable from
-           this node;
+         - all Link and filled OptLink nodes link to a node that's reachable
+           from this node;
          - the nodes referred to be One/Maybe only appear once in the tree
            (except through links).
 
@@ -421,12 +565,13 @@ class Node(object):
         self.check_complete()
 
     def is_well_formed(self):
-        """Returns whether the tree starting at this node is well-formed. That is:
+        """Returns whether the tree starting at this node is well-formed. That
+        is:
 
          - all One, Link, and Many edges have (at least) one entry;
          - all the One entries internally stored by Any/Many have an entry;
-         - all Link and filled OptLink nodes link to a node that's reachable from
-           this node;
+         - all Link and filled OptLink nodes link to a node that's reachable
+           from this node;
          - the nodes referred to be One/Maybe only appear once in the tree
            (except through links)."""
         try:
@@ -459,11 +604,11 @@ class _Multiple(object):
     def __init__(self,  *args, **kwargs):
         super().__init__()
         self._l = list(*args, **kwargs)
-        for index, value in enumerate(self._l):
-            if not isinstance(value, self._T):
+        for idx, val in enumerate(self._l):
+            if not isinstance(val, self._T):
                 raise TypeError(
                     'object {!r} at index {:d} is not an instance of {!r}'
-                    .format(value, index, self._T))
+                    .format(val, idx, self._T))
 
     def __repr__(self):
         return '{}({!r})'.format(type(self).__name__, self._l)
@@ -474,18 +619,18 @@ class _Multiple(object):
     def __len__(self):
         return len(self._l)
 
-    def __getitem__(self, index):
-        return self._l[index]
+    def __getitem__(self, idx):
+        return self._l[idx]
 
-    def __setitem__(self, index, value):
-        if not isinstance(value, self._T):
+    def __setitem__(self, idx, val):
+        if not isinstance(val, self._T):
             raise TypeError(
                 'object {!r} at index {:d} is not an instance of {!r}'
-                .format(value, index, self._T))
-        self._l[index] = value
+                .format(val, idx, self._T))
+        self._l[idx] = val
 
-    def __delitem__(self, index):
-        del self._l[index]
+    def __delitem__(self, idx):
+        del self._l[idx]
 
     def __iter__(self):
         return iter(self._l)
@@ -493,41 +638,41 @@ class _Multiple(object):
     def __reversed__(self):
         return reversed(self._l)
 
-    def __contains__(self, value):
-        return value in self._l
+    def __contains__(self, val):
+        return val in self._l
 
-    def append(self, value):
-        if not isinstance(value, self._T):
+    def append(self, val):
+        if not isinstance(val, self._T):
             raise TypeError(
                 'object {!r} is not an instance of {!r}'
-                .format(value, self._T))
-        self._l.append(value)
+                .format(val, self._T))
+        self._l.append(val)
 
     def extend(self, iterable):
-        for value in iterable:
-            self.append(value)
+        for val in iterable:
+            self.append(val)
 
-    def insert(self, index, value):
-        if not isinstance(value, self._T):
+    def insert(self, idx, val):
+        if not isinstance(val, self._T):
             raise TypeError(
                 'object {!r} is not an instance of {!r}'
-                .format(value, self._T))
-        self._l.insert(index, value)
+                .format(val, self._T))
+        self._l.insert(idx, val)
 
-    def remote(self, value):
-        self._l.remove(value)
+    def remote(self, val):
+        self._l.remove(val)
 
-    def pop(self, index=-1):
-        return self._l.pop(index)
+    def pop(self, idx=-1):
+        return self._l.pop(idx)
 
     def clear(self):
         self._l.clear()
 
-    def index(self, value, start=0, end=-1):
-        return self._l.index(value, start, end)
+    def idx(self, val, start=0, end=-1):
+        return self._l.idx(val, start, end)
 
-    def count(self, value):
-        return self._l.count(value)
+    def count(self, val):
+        return self._l.count(val)
 
     def sort(self, key=None, reverse=False):
         self._l.sort(key=key, reverse=reverse)
@@ -566,6 +711,14 @@ class _Multiple(object):
         copy = self.copy()
         copy *= other
         return copy
+
+
+def _cloned(obj):
+    """Attempts to clone the given object by calling its clone() method, if it
+    has one."""
+    if hasattr(obj, 'clone'):
+        return obj.clone()
+    return obj
 
 
 )PY";

@@ -8,10 +8,11 @@ project(directory-example CXX)
 add_subdirectory(../.. tree-gen)
 
 # Generates the files for the directory tree.
-generate_tree(
+generate_tree_py(
     "${CMAKE_CURRENT_SOURCE_DIR}/directory.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/directory.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/directory.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/directory.py"
 )
 
 add_executable(

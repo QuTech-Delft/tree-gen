@@ -8,17 +8,19 @@ project(interpreter-example CXX)
 add_subdirectory(../.. tree-gen)
 
 # Generates the files for the value tree.
-generate_tree(
+generate_tree_py(
     "${CMAKE_CURRENT_SOURCE_DIR}/value.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/value.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/value.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/value.py"
 )
 
 # Generates the files for the program tree.
-generate_tree(
+generate_tree_py(
     "${CMAKE_CURRENT_SOURCE_DIR}/program.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/program.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/program.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/program.py"
 )
 
 add_executable(
