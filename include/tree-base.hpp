@@ -516,8 +516,8 @@ public:
      */
     void serialize(cbor::MapWriter &map, const PointerMap &ids) const {
         map.append_string("@T", serdes_edge_type());
-        map.append_int("@i", ids.get(*this));
         if (val) {
+            map.append_int("@i", ids.get(*this));
             val->serialize(map, ids);
         } else {
             map.append_null("@t");

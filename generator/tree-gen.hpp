@@ -201,17 +201,23 @@
  *    into the Python file's docstring.
  *
  *  - `tree_namespace <namespace::path>`: the namespace that the
- *    Base and edge classes live in.
+ *    Base and edge classes live in. You should set this to `tree::base` unless
+ *    you intend to override or use different base classes. This is unused in
+ *    Python.
  *
  *  - `initialize_function <namespace::path::initialize>`: the name (including
  *    namespace path leading up to it) of the `T()` function used for getting
- *    the default value of any of the used primitive classes.
+ *    the default value of any of the used primitive classes. Unused in Python;
+ *    here, the default constructor is used regardless of type (as it always
+ *    exists and is meaningful in Python).
  *
  *  - `serdes_functions <namespace::path::serialize> <namespace::path::deserialize>`:
  *    optionally, the names (including namespace paths leading up to them) of
  *    the functions used to respectively serialize and deserialize primitive
- *    classes. If not specified, serialization functionality is disabled. Refer
- *    to the serialization section for more info.
+ *    classes. If not specified, serialization functionality is disabled in C++.
+ *    Python always has serdes support, but support is augmented when a serdes
+ *    function pair is specified. The Python generator interprets the namespace
+ *    path as a module path. Refer to the serialization section for more info.
  *
  *  - `location <namespace_path::SourceLocation>`: optionally, the name of the
  *    source location annotation class (including namespace path leading up to
@@ -219,13 +225,13 @@
  *    when doing a debug dump, and if it exists, uses it to add source
  *    information to the node, by streaming out a `#` followed by the stream
  *    overload for the class. The base class needs to be capable of annotations
- *    if you use this.
+ *    if you use this. This is not supported in Python.
  *
  *  - `include "<path>"`: adds an `#include` statement to the top of the
- *    generated header file.
+ *    generated C++ header file.
  *
  *  - `src_include "<path>"`: like `include`, but adds to the top of the
- *    generated C++ file only.
+ *    generated C++ source file only.
  *
  *  - `import ...`, `from ... import ...`: adds Python import statements to the
  *    top of the generated module.
@@ -234,7 +240,7 @@
  *    classes. As in C++, you need multiple of these to specify the full path.
  *    The docstring for the *first* annotation of this type that has a
  *    docstring in front is used to document the innermost namespace
- *    javadoc-style for Doxygen documentation.
+ *    javadoc-style for Doxygen documentation. This is not used in Python.
  *
  * \section apis Generated APIs
  *
@@ -251,26 +257,30 @@
  *  - `%NodeType type() const`: returns the type of this node, using the
  *    also-generated %NodeType enumeration.
  *
- *  - `One<Node> clone() const`: returns a shallow copy of this node.
+ *  - `One<Node> copy() const`: returns a shallow copy of this node.
  *
- *  - `One<Node> deep_clone() const`: returns a deep copy of this node.
+ *  - `One<Node> clone() const`: returns a deep copy of this node.
  *
  *  - An equality and inequality operator. Note that this ignores equality of
  *    any annotations.
  *
- *  - `void visit(Visitor &visitor)`: implements the visitor pattern using the
- *    also-generated abstract Visitor/RecursiveVisitor classes. See below.
+ *  - `void visit(Visitor &visitor)` (C++ only): implements the visitor pattern
+ *    using the also-generated abstract Visitor/RecursiveVisitor classes. See
+ *    below.
  *
  *  - `void dump(std::ostream &out=std::cout, int indent=0)`: does a debug
  *    dump of the node to the given stream with the given indentation level.
  *
- *  - `SomeNodeType *as_some_node_type()`: does the equivalent of a
+ *  - `SomeNodeType *as_some_node_type()` (C++ only): does the equivalent of a
  *    `dynamic_cast` to the given node type, returning `this` if the type is
  *    correct or `nullptr` if not.
  *
+ * Note that the prototypes for the Python equivalents differ as appropriate.
+ *
  * An implicit node class simply named `Node` is always generated, serving as
- * the base class for all other nodes. It is what derives from the `Base` class
- * defined in the namespace specified using tree_namespace.
+ * the base class for all other nodes. In C++, it is what derives from the
+ * `Base` class defined in the namespace specified using `tree_namespace`. In
+ * Python, the `Node` class always derives directly from `object`.
  *
  * \subsection traversal Tree traversal
  *
@@ -282,9 +292,9 @@
  * equivalents.
  *
  * Tree traversal is complicated by the fact that you often don't know exactly
- * which type a class is. For example, an expression node may actually be a
- * subtraction or addition. For this, tree-gen supports a few different
- * patterns:
+ * what the type of a node is. For example, an expression node may actually
+ * be a subtraction or addition. For this, tree-gen supports a few different
+ * patterns in C++:
  *
  *  - *Visitor pattern.* You define a class inheriting from the generated
  *    `Visitor` or `RecursiveVisitor` classes. These abstract classes provide
@@ -331,7 +341,10 @@
  *    switch based on the type and don't need access to members of the nodes
  *    this is more descriptive than the if/else form.
  *
- * Just choose the method that makes the most sense within context.
+ * Just choose the method that makes the most sense within context. Python is
+ * so much more dynamic in general that you're better off using its duck typing
+ * functionality or using `isinstance()` directly, so no special features are
+ * generated for this.
  *
  * Note that tree-gen trees do *not* contain allow traversal back toward the
  * root of a tree. Supporting this would greatly complicate the internals and
@@ -397,7 +410,6 @@
  *
  *     {
  *         "@T": "?",
- *         "@i": <sequence number>,
  *         "@t": null
  *     }
  *
@@ -496,23 +508,86 @@
  *
  * \subsection python Python support
  *
- * TODO: all functionality specified here is WIP
- *
  * In addition to C++, tree-gen can also generate pure-Python objects to
  * represent the tree. As in C++, each node type becomes a class, and class
  * hierarchy is used similarly. The edge classes don't exist, however; instead,
  * their functionality is baked into the generated code to prevent an
  * unnecessary user-facing level of indirection during tree traversal that
- * cannot be hidden in Python.
+ * cannot be hidden in Python. Despite this, the generated structures provide a
+ * similar level of type safety as the C++ structures do; all writes to fields
+ * of node classes are type-checked.
  *
- * TODO: work out how primitives and external nodes would work
+ * Where applicable, the generated Python file assumes that the Python module
+ * tree corresponds with the namespace hierarchy in the C++ world. This applies
+ * to the following things:
+ *
+ *  - primitive type declarations;
+ *  - external node types;
+ *  - (de)serialization functions.
+ *
+ * The initialization function isn't used in Python; rather, the default
+ * constructor of the primitive types is used.
  *
  * The connection between the C++ and Python world is handled through CBOR
  * serialization and deserialization rather than providing Python wrappers
  * around the C++ objects. While this approach isn't as performant as the
  * alternative, it allows a much simpler and more Pythonic interface to be
- * exposed to the user, and is simpler to implement to begin with.
+ * exposed to the user. Serdes is therefore perhaps the most important feature
+ * of the Python generator. Note however that it is entirely up to the program
+ * or library using tree-gen to provide the requisite interface between the C++
+ * and Python worlds (for example through swig); tree-gen just ensures that the
+ * Python and C++ tree implementations always remain in sync.
  *
+ * The serialization and deserialization functions naturally have a different
+ * signature in Python than they do in C++. More specifically, the functions
+ * must look like this:
+ *
+ * ```python3
+ * def serialize(typ, val):
+ *     # typ is either a type (for primitives) or a str (for annotations). In
+ *     # the former case, isinstance(val, typ) may be assumed. Return value must
+ *     # be an object consisting of only the following types:
+ *     #  - `dict`s with `str` keys;
+ *     #  - `list`s;
+ *     #  - `int`s between -2^63 and 2^63-1 inclusive;
+ *     #  - `float`s;
+ *     #  - `True`, `False`, or `None`;
+ *     #  - `str`s;
+ *     #  - `bytes` objects.
+ *     # The toplevel object must be a dict or a `bytes` object. In the latter
+ *     # case, the `bytes` object must be a valid CBOR structure, with a map as
+ *     # the root type.
+ *     pass # TODO
+ *
+ * def deserialize(typ, val):
+ *     # typ is either a type (for primitives) or a str (for annotations). val
+ *     # is a structure representing the CBOR serialization using the same
+ *     # Python primitives that can be returned by serialize(). The return value
+ *     # must be an instance of the specified `typ`e for primitives, but can be
+ *     # anything for annotations; for unknown annotation types, just returning
+ *     # val as-is is the recommended fallback behavior.
+ *     pass # TODO
+ * ```
+ *
+ * Primitive serialization and deserialization can also be done using class
+ * methods:
+ *
+ * ```python3
+ * class SomePrimitive:
+ *     def serialize_cbor(self):
+ *         # Called instead of serialize(SomePrimitive, self) if it exists.
+ *         pass # TODO
+ *
+ *     @staticmethod
+ *     def deserialize_cbor(cbor):
+ *         # Called instead of deserialize(SomePrimitive, cbor) if it exists.
+ *         pass # TODO
+ * ```
+ *
+ * If no `serdes_function` directive is specified, serdes logic is still
+ * generated on the Python end; in this case, only the class method variant is
+ * used, and annotations must be directly serializable to CBOR for them to be
+ * serialized (they will be silently ignored if they're not).
  */
 
 #ifndef _TREE_GEN_HPP_INCLUDED_
@@ -607,6 +682,12 @@ struct ChildNode {
     std::string py_prim_type;
 
     /**
+     * The primitive Multi* type name in the Python world, if any (depends on
+     * type and ext_type).
+     */
+    std::string py_multi_type;
+
+    /**
      * Class member name.
      */
     std::string name;
@@ -619,8 +700,7 @@ struct ChildNode {
     /**
      * External node type. This is valid when `type` is Prim. If this is Prim
      * as well, then it's actually a primitive, otherwise it's a node from
-     * another tree. This is kind of a kludge for having the dumper class
-     * properly handle indentation here; that's the only place it's used.
+     * another tree.
      */
     AttributeType ext_type;
 };
@@ -801,9 +881,21 @@ public:
     std::string serialize_fn;
 
     /**
+     * Serialization function to use when serializing primitives in the Python
+     * domain, using . instead of :: for namespace separation.
+     */
+    std::string py_serialize_fn;
+
+    /**
      * The serialization function to use when deserializing primitives.
      */
     std::string deserialize_fn;
+
+    /**
+     * Deserialization function to use when serializing primitives in the Python
+     * domain, using . instead of :: for namespace separation.
+     */
+    std::string py_deserialize_fn;
 
     /**
      * Annotation object used for source location info, or empty if source

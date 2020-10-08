@@ -76,6 +76,7 @@ NodeBuilder *NodeBuilder::with_child(
     child.type = type;
     child.prim_type = node_name;
     child.py_prim_type = "";
+    child.py_multi_type = "";
     child.name = name;
     child.doc = doc;
     child.ext_type = type;
@@ -104,6 +105,14 @@ NodeBuilder *NodeBuilder::with_prim(
         default:      child.prim_type = prim; break;
     }
     child.py_prim_type = replace_all(prim, "::", ".");
+    auto pos = child.py_prim_type.find_last_of('.');
+    if (pos == std::string::npos) {
+        child.py_multi_type = "Multi" + child.py_prim_type;
+    } else {
+        child.py_multi_type = child.py_prim_type.substr(0, pos + 1)
+                            + "Multi"
+                            + child.py_prim_type.substr(pos + 1);
+    }
     child.name = name;
     child.doc = doc;
     child.ext_type = type;
@@ -168,7 +177,9 @@ void Specification::set_serdes_functions(const std::string &ser_fn, const std::s
         throw std::runtime_error("duplicate serialize/deserialize function declaration");
     }
     serialize_fn = ser_fn;
+    py_serialize_fn = replace_all(ser_fn, "::", ".");
     deserialize_fn = des_fn;
+    py_deserialize_fn = replace_all(des_fn, "::", ".");
 }
 
 /**

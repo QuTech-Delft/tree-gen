@@ -47,10 +47,10 @@ Reader::Reader(const Reader &parent, size_t offs, size_t len) :
     uint8_t initial = read_at(0);
     uint8_t type = initial >> 5u;
     if (type == 6) {
-        size_t end = slice_offset + slice_length;
-        slice_offset++;
-        read_intlike(initial & 0x1Fu, slice_offset);
-        slice_length = end - slice_offset;
+        size_t tag_len = 1;
+        read_intlike(initial & 0x1Fu, tag_len);
+        slice_offset += tag_len;
+        slice_length -= tag_len;
         if (this->slice_length == 0) {
             throw std::runtime_error("invalid CBOR: semantic tag has no value");
         }
@@ -165,14 +165,16 @@ void Reader::check_and_seek(size_t &offset) const {
                 // of definite-length strings of the same type.
                 uint8_t sub_initial;
                 while ((sub_initial = read_at(offset++)) != 0xFF) {
-                    uint8_t sub_major_type = sub_initial >> 5u;
+                    uint8_t sub_type = sub_initial >> 5u;
                     uint8_t sub_info = sub_initial & 0x1Fu;
-                    if (sub_major_type != type) {
+                    if (sub_type != type) {
                         throw std::runtime_error("invalid CBOR: illegal indefinite-length string component");
                     }
+
                     // Seek past definite-length string component. The size in
                     // bytes is encoded as an integer.
                     offset += read_intlike(sub_info, offset);
+
                 }
 
                 return;
