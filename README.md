@@ -57,7 +57,7 @@ and CMake *Should*™ handle everything for you.
 If you're on a POSIX system and Flex/Bison are too old or not installed, the
 buildsystem will attempt to download and build them from source for you.
 
-For usage information beyond this, [Read The Docs](tree-gen.readthedocs.io).
+For usage information beyond this, [Read The Docs](https://tree-gen.readthedocs.io/).
 
 ## Project structure
 
