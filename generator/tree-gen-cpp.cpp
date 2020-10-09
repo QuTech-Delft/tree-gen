@@ -595,7 +595,7 @@ void generate_node_class(
                         case Many:    source << "Many"; break;
                         case OptLink: source << "OptLink"; break;
                         case Link:    source << "Link"; break;
-                        default:      source << "<?????>"; break;
+                        default:      source << "<?>"; break;
                     }
                     source << "<" << field.node_type->title_case_name << ">(";
                     source << "map.at(\"" << field.name << "\").as_map(), ids)";

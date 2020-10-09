@@ -364,7 +364,7 @@ int64_t Reader::as_int() const {
             + std::string(get_type_name()));
     }
     uint8_t info = initial & 0x1Fu;
-    uint64_t offset = 1;
+    size_t offset = 1;
     uint64_t value = read_intlike(info, offset);
     if (value >= 0x8000000000000000ull) {
         throw std::runtime_error("CBOR integer out of int64 range");
@@ -419,7 +419,7 @@ std::string Reader::as_string() const {
             + std::string(get_type_name()));
     }
     std::ostringstream ss;
-    uint64_t offset = 0;
+    size_t offset = 0;
     read_stringlike(offset, ss);
     return ss.str();
 }
@@ -443,7 +443,7 @@ std::string Reader::as_binary() const {
             + std::string(get_type_name()));
     }
     std::ostringstream ss;
-    uint64_t offset = 0;
+    size_t offset = 0;
     read_stringlike(offset, ss);
     return ss.str();
 }

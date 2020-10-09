@@ -754,7 +754,7 @@ def _cbor_read_intlike(cbor, offset, info):
     # method.
     raise ValueError("invalid CBOR: illegal additional info for integer or object length")
 
-
+)PY" << R"PY(
 def _sub_cbor_to_py(cbor, offset):
     """Converts the CBOR object starting at cbor[offset] to its Python
     representation for as far as tree-gen supports CBOR. Returns this Python
@@ -916,7 +916,7 @@ def _sub_cbor_to_py(cbor, offset):
 
     raise ValueError('invalid CBOR: unknown type code')
 
-
+)PY" << R"PY(
 def _cbor_to_py(cbor):
     """Converts the given CBOR object (bytes) to its Python representation for
     as far as tree-gen supports CBOR. Supported types:
@@ -1027,7 +1027,7 @@ def _py_to_cbor(value, type_converter=None):
 
     raise TypeError('unsupported type for conversion to cbor: %r' % (value,))
 
-
+)PY" << R"PY(
 class NotWellFormed(ValueError):
     """Exception class for well-formedness checks."""
 
@@ -1159,7 +1159,7 @@ class Node(object):
     def _deserialize(cbor, seq_to_ob, links):
         raise NotImplementedError('please call deserialize() on the node type you\'re expecting')
 
-
+)PY" << R"PY(
 @functools.total_ordering
 class _Multiple(object):
     """Base class for the Any* and Many* edge helper classes. Inheriting
