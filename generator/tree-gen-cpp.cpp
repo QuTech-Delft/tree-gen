@@ -376,6 +376,7 @@ void generate_node_class(
         format_doc(source, doc);
         source << "void " << node.title_case_name;
         source << "::find_reachable(::tree::base::PointerMap &map) const {" << std::endl;
+        source << "    (void)map;" << std::endl;
         for (auto &field : all_fields) {
             switch (field.type) {
                 case Maybe:
@@ -398,6 +399,7 @@ void generate_node_class(
         format_doc(source, doc);
         source << "void " << node.title_case_name;
         source << "::check_complete(const ::tree::base::PointerMap &map) const {" << std::endl;
+        source << "    (void)map;" << std::endl;
         if (node.is_error_marker) {
             source << "    throw ::tree::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
         } else {

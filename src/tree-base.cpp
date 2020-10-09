@@ -58,6 +58,30 @@ void IdentifierMap::restore_links() const {
 }
 
 /**
+ * Traverses the tree to register all reachable Maybe/One nodes with the
+ * given map. This also checks whether all One/Maybe nodes only appear once
+ * in the tree (except through links). If there are duplicates, a
+ * NotWellFormed exception is thrown.
+ */
+void Completable::find_reachable(::tree::base::PointerMap &map) const {
+    (void)map;
+}
+
+/**
+ * Checks completeness of this node given a map of raw, internal Node
+ * pointers to sequence numbers for all nodes reachable from the root. That
+ * is:
+ *  - all One, Link, and Many edges have (at least) one entry;
+ *  - all the One entries internally stored by Any/Many have an entry;
+ *  - all Link and filled OptLink nodes link to a node previously registered
+ *    with the PointerMap.
+ * If not complete, a NotWellFormed exception is thrown.
+ */
+void Completable::check_complete(const ::tree::base::PointerMap &map) const {
+    (void)map;
+}
+
+/**
  * Checks whether the tree starting at this node is well-formed. That is:
  *  - all One, Link, and Many edges have (at least) one entry;
  *  - all the One entries internally stored by Any/Many have an entry;

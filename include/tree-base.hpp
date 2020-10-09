@@ -147,7 +147,7 @@ public:
      * in the tree (except through links). If there are duplicates, a
      * NotWellFormed exception is thrown.
      */
-    virtual void find_reachable(PointerMap &map) const = 0;
+    virtual void find_reachable(PointerMap &map) const;
 
     /**
      * Checks completeness of this node given a map of raw, internal Node
@@ -159,7 +159,7 @@ public:
      *    with the PointerMap.
      * If not complete, a NotWellFormed exception is thrown.
      */
-    virtual void check_complete(const PointerMap &map) const = 0;
+    virtual void check_complete(const PointerMap &map) const;
 
     /**
      * Checks whether the tree starting at this node is well-formed. That is:
