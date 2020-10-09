@@ -24,7 +24,7 @@ include(GNUInstallDirs)
 option(
     BUILD_SHARED_LIBS
     "Whether libraries should be built as a shared object or as a static library"
-    ON
+    OFF
 )
 
 # Whether tests should be built.
