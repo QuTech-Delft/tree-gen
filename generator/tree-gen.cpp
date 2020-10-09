@@ -13,10 +13,10 @@ namespace tree_gen {
 /**
  * Gathers all child nodes, including those in parent classes.
  */
-std::vector<ChildNode> NodeType::all_children() {
-    std::vector<ChildNode> children = this->children;
+std::vector<Field> Node::all_fields() {
+    std::vector<Field> children = this->fields;
     if (parent) {
-        auto from_parent = parent->all_children();
+        auto from_parent = parent->all_fields();
         children.insert(children.end(), from_parent.begin(), from_parent.end());
     }
     return children;
@@ -39,7 +39,7 @@ std::string replace_all(std::string str, const std::string &from, const std::str
  * Construct a node with the given snake_case name and class documentation.
  */
 NodeBuilder::NodeBuilder(const std::string &name, const std::string &doc) {
-    node = std::make_shared<NodeType>();
+    node = std::make_shared<Node>();
     node->snake_case_name = name;
     node->doc = doc;
     node->is_error_marker = false;
@@ -57,7 +57,7 @@ NodeBuilder::NodeBuilder(const std::string &name, const std::string &doc) {
 /**
  * Marks this node as deriving from the given node type.
  */
-NodeBuilder *NodeBuilder::derive_from(std::shared_ptr<NodeType> parent) {
+NodeBuilder *NodeBuilder::derive_from(std::shared_ptr<Node> parent) {
     node->parent = parent;
     parent->derived.push_back(node);
     return this;
@@ -67,12 +67,12 @@ NodeBuilder *NodeBuilder::derive_from(std::shared_ptr<NodeType> parent) {
  * Adds a child node. `type` should be one of the edge types.
  */
 NodeBuilder *NodeBuilder::with_child(
-    AttributeType type,
+    EdgeType type,
     const std::string &node_name,
     const std::string &name,
     const std::string &doc
 ) {
-    auto child = ChildNode();
+    auto child = Field();
     child.type = type;
     child.prim_type = node_name;
     child.py_prim_type = "";
@@ -80,7 +80,7 @@ NodeBuilder *NodeBuilder::with_child(
     child.name = name;
     child.doc = doc;
     child.ext_type = type;
-    node->children.push_back(std::move(child));
+    node->fields.push_back(std::move(child));
     return this;
 }
 
@@ -91,9 +91,9 @@ NodeBuilder *NodeBuilder::with_prim(
     const std::string &prim,
     const std::string &name,
     const std::string &doc,
-    AttributeType type
+    EdgeType type
 ) {
-    auto child = ChildNode();
+    auto child = Field();
     child.type = Prim;
     switch (type) {
         case Maybe:   child.prim_type = "Maybe<" + prim + ">"; break;
@@ -116,7 +116,7 @@ NodeBuilder *NodeBuilder::with_prim(
     child.name = name;
     child.doc = doc;
     child.ext_type = type;
-    node->children.push_back(std::move(child));
+    node->fields.push_back(std::move(child));
     return this;
 }
 
@@ -242,7 +242,7 @@ void Specification::build() {
         throw std::runtime_error("initialization function not specified");
     }
     for (auto &it : builders) {
-        for (auto &child : it.second->node->children) {
+        for (auto &child : it.second->node->fields) {
             if (child.type != Prim) {
                 auto name = child.prim_type;
                 child.prim_type = "";

@@ -97,7 +97,7 @@ void generate_typecast_function(
     std::ofstream &header,
     std::ofstream &source,
     const std::string &clsname,
-    NodeType &into,
+    Node &into,
     bool allowed
 ) {
     for (int constant = 0; constant < 2; constant++) {
@@ -232,7 +232,7 @@ void generate_base_class(
  */
 void generate_deserialize_mux(
     std::ofstream &source,
-    NodeType &node
+    Node &node
 ) {
     if (node.derived.empty()) {
         source << "    if (type == \"" << node.title_case_name << "\") ";
@@ -251,9 +251,9 @@ void generate_node_class(
     std::ofstream &header,
     std::ofstream &source,
     Specification &spec,
-    NodeType &node
+    Node &node
 ) {
-    const auto all_children = node.all_children();
+    const auto all_fields = node.all_fields();
 
     // Print class header.
     if (!node.doc.empty()) {
@@ -268,54 +268,54 @@ void generate_node_class(
     header << " {" << std::endl;
     header << "public:" << std::endl << std::endl;
 
-    // Print children.
-    for (auto &child : node.children) {
-        if (!child.doc.empty()) {
-            format_doc(header, child.doc, "    ");
+    // Print fields.
+    for (auto &field : node.fields) {
+        if (!field.doc.empty()) {
+            format_doc(header, field.doc, "    ");
         }
         header << "    ";
-        switch (child.type) {
-            case Maybe:   header << "Maybe<"   << child.node_type->title_case_name << "> "; break;
-            case One:     header << "One<"     << child.node_type->title_case_name << "> "; break;
-            case Any:     header << "Any<"     << child.node_type->title_case_name << "> "; break;
-            case Many:    header << "Many<"    << child.node_type->title_case_name << "> "; break;
-            case OptLink: header << "OptLink<" << child.node_type->title_case_name << "> "; break;
-            case Link:    header << "Link<"    << child.node_type->title_case_name << "> "; break;
-            case Prim:    header << child.prim_type << " "; break;
+        switch (field.type) {
+            case Maybe:   header << "Maybe<"   << field.node_type->title_case_name << "> "; break;
+            case One:     header << "One<"     << field.node_type->title_case_name << "> "; break;
+            case Any:     header << "Any<"     << field.node_type->title_case_name << "> "; break;
+            case Many:    header << "Many<"    << field.node_type->title_case_name << "> "; break;
+            case OptLink: header << "OptLink<" << field.node_type->title_case_name << "> "; break;
+            case Link:    header << "Link<"    << field.node_type->title_case_name << "> "; break;
+            case Prim:    header << field.prim_type << " "; break;
         }
-        header << child.name << ";" << std::endl << std::endl;
+        header << field.name << ";" << std::endl << std::endl;
     }
 
     // Print constructors.
-    if (!all_children.empty()) {
+    if (!all_fields.empty()) {
         format_doc(header, "Constructor.", "    ");
         header << "    " << node.title_case_name << "(";
         bool first = true;
-        for (auto &child : all_children) {
+        for (auto &field : all_fields) {
             if (first) {
                 first = false;
             } else {
                 header << ", ";
             }
             header << "const ";
-            switch (child.type) {
-                case Maybe:   header << "Maybe<"   << child.node_type->title_case_name << "> "; break;
-                case One:     header << "One<"     << child.node_type->title_case_name << "> "; break;
-                case Any:     header << "Any<"     << child.node_type->title_case_name << "> "; break;
-                case Many:    header << "Many<"    << child.node_type->title_case_name << "> "; break;
-                case OptLink: header << "OptLink<" << child.node_type->title_case_name << "> "; break;
-                case Link:    header << "Link<"    << child.node_type->title_case_name << "> "; break;
-                case Prim:    header << child.prim_type << " "; break;
+            switch (field.type) {
+                case Maybe:   header << "Maybe<"   << field.node_type->title_case_name << "> "; break;
+                case One:     header << "One<"     << field.node_type->title_case_name << "> "; break;
+                case Any:     header << "Any<"     << field.node_type->title_case_name << "> "; break;
+                case Many:    header << "Many<"    << field.node_type->title_case_name << "> "; break;
+                case OptLink: header << "OptLink<" << field.node_type->title_case_name << "> "; break;
+                case Link:    header << "Link<"    << field.node_type->title_case_name << "> "; break;
+                case Prim:    header << field.prim_type << " "; break;
             }
-            header << "&" << child.name << " = ";
-            switch (child.type) {
-                case Maybe:   header << "Maybe<"   << child.node_type->title_case_name << ">()"; break;
-                case One:     header << "One<"     << child.node_type->title_case_name << ">()"; break;
-                case Any:     header << "Any<"     << child.node_type->title_case_name << ">()"; break;
-                case Many:    header << "Many<"    << child.node_type->title_case_name << ">()"; break;
-                case OptLink: header << "OptLink<" << child.node_type->title_case_name << ">()"; break;
-                case Link:    header << "Link<"    << child.node_type->title_case_name << ">()"; break;
-                case Prim:    header << spec.initialize_function << "<" << child.prim_type << ">()"; break;
+            header << "&" << field.name << " = ";
+            switch (field.type) {
+                case Maybe:   header << "Maybe<"   << field.node_type->title_case_name << ">()"; break;
+                case One:     header << "One<"     << field.node_type->title_case_name << ">()"; break;
+                case Any:     header << "Any<"     << field.node_type->title_case_name << ">()"; break;
+                case Many:    header << "Many<"    << field.node_type->title_case_name << ">()"; break;
+                case OptLink: header << "OptLink<" << field.node_type->title_case_name << ">()"; break;
+                case Link:    header << "Link<"    << field.node_type->title_case_name << ">()"; break;
+                case Prim:    header << spec.initialize_function << "<" << field.prim_type << ">()"; break;
             }
         }
         header << ");" << std::endl << std::endl;
@@ -323,47 +323,47 @@ void generate_node_class(
         format_doc(source, "Constructor.", "");
         source << node.title_case_name << "::" << node.title_case_name << "(";
         first = true;
-        for (auto &child : all_children) {
+        for (auto &field : all_fields) {
             if (first) {
                 first = false;
             } else {
                 source << ", ";
             }
             source << "const ";
-            switch (child.type) {
-                case Maybe:   source << "Maybe<"   << child.node_type->title_case_name << "> "; break;
-                case One:     source << "One<"     << child.node_type->title_case_name << "> "; break;
-                case Any:     source << "Any<"     << child.node_type->title_case_name << "> "; break;
-                case Many:    source << "Many<"    << child.node_type->title_case_name << "> "; break;
-                case OptLink: source << "OptLink<" << child.node_type->title_case_name << "> "; break;
-                case Link:    source << "Link<"    << child.node_type->title_case_name << "> "; break;
-                case Prim:    source << child.prim_type << " "; break;
+            switch (field.type) {
+                case Maybe:   source << "Maybe<" << field.node_type->title_case_name << "> "; break;
+                case One:     source << "One<" << field.node_type->title_case_name << "> "; break;
+                case Any:     source << "Any<" << field.node_type->title_case_name << "> "; break;
+                case Many:    source << "Many<" << field.node_type->title_case_name << "> "; break;
+                case OptLink: source << "OptLink<" << field.node_type->title_case_name << "> "; break;
+                case Link:    source << "Link<" << field.node_type->title_case_name << "> "; break;
+                case Prim:    source << field.prim_type << " "; break;
             }
-            source << "&" << child.name;
+            source << "&" << field.name;
         }
         source << ")" << std::endl << "    : ";
         first = true;
         if (node.parent) {
             source << node.parent->title_case_name << "(";
             first = true;
-            for (auto &child : node.parent->all_children()) {
+            for (auto &field : node.parent->all_fields()) {
                 if (first) {
                     first = false;
                 } else {
                     source << ", ";
                 }
-                source << child.name;
+                source << field.name;
             }
             source << ")";
             first = false;
         }
-        for (auto &child : node.children) {
+        for (auto &field : node.fields) {
             if (first) {
                 first = false;
             } else {
                 source << ", ";
             }
-            source << child.name << "(" << child.name << ")";
+            source << field.name << "(" << field.name << ")";
         }
         source << std::endl << "{}" << std::endl << std::endl;
     }
@@ -376,15 +376,15 @@ void generate_node_class(
         format_doc(source, doc);
         source << "void " << node.title_case_name;
         source << "::find_reachable(::tree::base::PointerMap &map) const {" << std::endl;
-        for (auto &child : all_children) {
-            switch (child.type) {
+        for (auto &field : all_fields) {
+            switch (field.type) {
                 case Maybe:
                 case One:
                 case Any:
                 case Many:
                 case OptLink:
                 case Link:
-                    source << "    " << child.name << ".find_reachable(map);" << std::endl;
+                    source << "    " << field.name << ".find_reachable(map);" << std::endl;
                     break;
                 default:
                     break;
@@ -401,15 +401,15 @@ void generate_node_class(
         if (node.is_error_marker) {
             source << "    throw ::tree::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
         } else {
-            for (auto &child : all_children) {
-                switch (child.type) {
+            for (auto &field : all_fields) {
+                switch (field.type) {
                     case Maybe:
                     case One:
                     case Any:
                     case Many:
                     case OptLink:
                     case Link:
-                        source << "    " << child.name << ".check_complete(map);" << std::endl;
+                        source << "    " << field.name << ".check_complete(map);" << std::endl;
                         break;
                     default:
                         break;
@@ -479,14 +479,14 @@ void generate_node_class(
         }
         source << "make<" << node.title_case_name << ">(" << std::endl;
         bool first = true;
-        for (auto &child : all_children) {
+        for (auto &field : all_fields) {
             if (first) {
                 first = false;
             } else {
                 source << "," << std::endl;
             }
-            source << "        " << child.name;
-            switch (child.type) {
+            source << "        " << field.name;
+            switch (field.type) {
                 case Maybe:
                 case One:
                 case Any:
@@ -494,7 +494,7 @@ void generate_node_class(
                     source << ".clone()";
                     break;
                 case Prim:
-                    switch (child.ext_type) {
+                    switch (field.ext_type) {
                         case Maybe:
                         case One:
                         case Any:
@@ -522,10 +522,10 @@ void generate_node_class(
         source << "bool " << node.title_case_name;
         source << "::operator==(const Node& rhs) const {" << std::endl;
         source << "    if (rhs.type() != NodeType::" << node.title_case_name << ") return false;" << std::endl;
-        if (!all_children.empty()) {
+        if (!all_fields.empty()) {
             source << "    auto rhsc = dynamic_cast<const " << node.title_case_name << "&>(rhs);" << std::endl;
-            for (auto &child : all_children) {
-                source << "    if (this->" << child.name << " != rhsc." << child.name << ") return false;" << std::endl;
+            for (auto &field : all_fields) {
+                source << "    if (this->" << field.name << " != rhsc." << field.name << ") return false;" << std::endl;
             }
         }
         source << "    return true;" << std::endl;
@@ -547,18 +547,18 @@ void generate_node_class(
             source << ") const {" << std::endl;
             source << "    map.append_string(\"@t\", \"" << node.title_case_name << "\");" << std::endl;
             bool first = true;
-            for (const auto &child : all_children) {
+            for (const auto &field : all_fields) {
                 source << "    ";
                 if (first) {
                     source << "auto ";
                     first = false;
                 }
-                source << "submap = map.append_map(\"" << child.name << "\");" << std::endl;
-                if (child.type == Prim && child.ext_type == Prim) {
-                    source << "    " << spec.serialize_fn << "<" << child.prim_type << ">";
-                    source << "(" << child.name << ", submap);" << std::endl;
+                source << "submap = map.append_map(\"" << field.name << "\");" << std::endl;
+                if (field.type == Prim && field.ext_type == Prim) {
+                    source << "    " << spec.serialize_fn << "<" << field.prim_type << ">";
+                    source << "(" << field.name << ", submap);" << std::endl;
                 } else {
-                    source << "    " << child.name << ".serialize(submap, ids);" << std::endl;
+                    source << "    " << field.name << ".serialize(submap, ids);" << std::endl;
                 }
                 source << "    submap.close();" << std::endl;
             }
@@ -576,9 +576,9 @@ void generate_node_class(
             source << "        throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;
             source << "    }" << std::endl;
             source << "    auto node = std::make_shared<" << node.title_case_name << ">(" << std::endl;
-            std::vector<ChildNode> links{};
+            std::vector<Field> links{};
             first = true;
-            for (const auto &child : all_children) {
+            for (const auto &field : all_fields) {
                 if (first) {
                     first = false;
                 } else {
@@ -586,9 +586,9 @@ void generate_node_class(
                 }
                 source << "        ";
 
-                AttributeType type = (child.type != Prim) ? child.type : child.ext_type;
-                if (child.type != Prim) {
-                    switch (child.type) {
+                EdgeType type = (field.type != Prim) ? field.type : field.ext_type;
+                if (field.type != Prim) {
+                    switch (field.type) {
                         case Maybe:   source << "Maybe"; break;
                         case One:     source << "One"; break;
                         case Any:     source << "Any"; break;
@@ -597,17 +597,17 @@ void generate_node_class(
                         case Link:    source << "Link"; break;
                         default:      source << "<?????>"; break;
                     }
-                    source << "<" << child.node_type->title_case_name << ">(";
-                    source << "map.at(\"" << child.name << "\").as_map(), ids)";
-                } else if (child.ext_type != Prim) {
-                    source << child.prim_type << "(";
-                    source << "map.at(\"" << child.name << "\").as_map(), ids)";
+                    source << "<" << field.node_type->title_case_name << ">(";
+                    source << "map.at(\"" << field.name << "\").as_map(), ids)";
+                } else if (field.ext_type != Prim) {
+                    source << field.prim_type << "(";
+                    source << "map.at(\"" << field.name << "\").as_map(), ids)";
                 } else {
-                    source << spec.deserialize_fn << "<" << child.prim_type << ">";
-                    source << "(map.at(\"" << child.name << "\").as_map())";
+                    source << spec.deserialize_fn << "<" << field.prim_type << ">";
+                    source << "(map.at(\"" << field.name << "\").as_map())";
                 }
                 if (type == OptLink || type == Link) {
-                    links.push_back(child);
+                    links.push_back(field);
                 }
             }
             source << std::endl;
@@ -815,17 +815,17 @@ void generate_recursive_visitor_class(
     format_doc(
         header,
         "Visitor base class defaulting to DFS traversal.\n\n"
-        "The visitor functions for nodes with children default to DFS "
+        "The visitor functions for nodes with subnode fields default to DFS "
         "traversal instead of falling back to more generic node types.");
     header << "class RecursiveVisitor : public Visitor<void> {" << std::endl;
     header << "public:" << std::endl << std::endl;
 
     // Functions for all node types.
     for (auto &node : nodes) {
-        auto all_children = node->all_children();
+        auto all_fields = node->all_fields();
         bool empty = true;
-        for (auto &child : all_children) {
-            if (child.node_type) {
+        for (auto &field : all_fields) {
+            if (field.node_type) {
                 empty = false;
                 break;
             }
@@ -840,9 +840,9 @@ void generate_recursive_visitor_class(
         format_doc(source, doc);
         source << "void RecursiveVisitor::visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node) {" << std::endl;
-        for (auto &child : all_children) {
-            if (child.node_type) {
-                source << "    node." << child.name << ".visit(*this);" << std::endl;
+        for (auto &field : all_fields) {
+            if (field.node_type) {
+                source << "    node." << field.name << ".visit(*this);" << std::endl;
             }
         }
         source << "}" << std::endl << std::endl;
@@ -907,7 +907,7 @@ void generate_dumper_class(
         source << "void Dumper::visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node) {" << std::endl;
         source << "    write_indent();" << std::endl;
-        auto attributes = node->all_children();
+        auto attributes = node->all_fields();
         source << "    out << \"" << node->title_case_name << "(\";" << std::endl;
         if (!source_location.empty()) {
             source << "    if (auto loc = node.get_annotation_ptr<" << source_location << ">()) {" << std::endl;
@@ -918,7 +918,7 @@ void generate_dumper_class(
         if (!attributes.empty()) {
             source << "    indent++;" << std::endl;
             for (auto &attrib : attributes) {
-                AttributeType type = (attrib.type == Prim) ? attrib.ext_type : attrib.type;
+                EdgeType type = (attrib.type == Prim) ? attrib.ext_type : attrib.type;
                 source << "    write_indent();" << std::endl;
                 source << "    out << \"" << attrib.name;
                 if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
@@ -1103,14 +1103,14 @@ void generate(
             }
             int prim_id = 0;
             for (auto &node : nodes) {
-                for (auto child : node->children) {
-                    AttributeType typ;
-                    if (child.node_type) {
+                for (auto field : node->fields) {
+                    EdgeType typ;
+                    if (field.node_type) {
                         header << " *   " << node->title_case_name;
-                        header << " -> " << child.node_type->title_case_name;
-                        typ = child.type;
+                        header << " -> " << field.node_type->title_case_name;
+                        typ = field.type;
                     } else {
-                        std::string full_name = child.prim_type;
+                        std::string full_name = field.prim_type;
                         auto pos = full_name.find("<");
                         if (pos != std::string::npos) {
                             full_name = full_name.substr(pos + 1);
@@ -1133,10 +1133,10 @@ void generate(
                         header << "\"];" << std::endl;
                         header << " *   " << node->title_case_name;
                         header << " -> prim" << prim_id;
-                        typ = child.ext_type;
+                        typ = field.ext_type;
                         prim_id++;
                     }
-                    header << " [ label=\"" << child.name;
+                    header << " [ label=\"" << field.name;
                     switch (typ) {
                         case Any: header << "*\", arrowhead=open, style=bold, "; break;
                         case OptLink: header << "@?\", arrowhead=open, style=dashed, "; break;

@@ -68,7 +68,7 @@ void format_doc(
  */
 void generate_deserialize_mux(
     std::ofstream &output,
-    NodeType &node
+    Node &node
 ) {
     if (node.derived.empty()) {
         output << "        if typ == '" << node.title_case_name << "':" << std::endl;
@@ -86,9 +86,9 @@ void generate_deserialize_mux(
 void generate_node_class(
     std::ofstream &output,
     Specification &spec,
-    NodeType &node
+    Node &node
 ) {
-    auto all_fields = node.all_children();
+    auto all_fields = node.all_fields();
 
     // Print class header.
     output << "class " << node.title_case_name << "(";
@@ -105,9 +105,9 @@ void generate_node_class(
 
     // Print slots for the fields.
     output << "    __slots__ = [";
-    if (!node.children.empty()) {
+    if (!node.fields.empty()) {
         output << std::endl;
-        for (const auto &field : node.children) {
+        for (const auto &field : node.fields) {
             output << "        '_attr_" << field.name << "'," << std::endl;
         }
         output << "    ";
@@ -130,7 +130,7 @@ void generate_node_class(
     output << "        super().__init__(";
     if (node.parent) {
         bool first = true;
-        for (const auto &field : node.parent->all_children()) {
+        for (const auto &field : node.parent->all_fields()) {
             if (first) {
                 first = false;
             } else {
@@ -140,13 +140,13 @@ void generate_node_class(
         }
     }
     output << ")" << std::endl;
-    for (const auto &field : node.children) {
+    for (const auto &field : node.fields) {
         output << "        self." << field.name << " = " << field.name << std::endl;
     }
     output << std::endl;
 
     // Print the field getters, setters, and deleters.
-    for (const auto &field : node.children) {
+    for (const auto &field : node.fields) {
 
         // Attributes representing Any or Many edges require a list-like class
         // to sit between the field accessors and the user to make things
@@ -212,7 +212,7 @@ void generate_node_class(
         output << "        if not isinstance(other, " << node.title_case_name << "):" << std::endl;
         output << "            return False" << std::endl;
         for (const auto &field : all_fields) {
-            AttributeType type = (field.type == Prim) ? field.ext_type : field.type;
+            EdgeType type = (field.type == Prim) ? field.ext_type : field.type;
             switch (type) {
                 case Maybe:
                 case One:
@@ -252,7 +252,7 @@ void generate_node_class(
         if (!all_fields.empty()) {
             output << "        indent += 1" << std::endl;
             for (auto &field : all_fields) {
-                AttributeType type = (field.type == Prim) ? field.ext_type : field.type;
+                EdgeType type = (field.type == Prim) ? field.ext_type : field.type;
                 output << "        s.append('  '*indent)" << std::endl;
                 output << "        s.append('" << field.name;
                 if (type == Link || type == OptLink) {
@@ -329,7 +329,7 @@ void generate_node_class(
         output << "            raise NotWellFormed('node {!r} with id {} occurs more than once'.format(self, id(self)))" << std::endl;
         output << "        id_map[id(self)] = len(id_map)" << std::endl;
         for (const auto &field : all_fields) {
-            AttributeType type = (field.type == Prim) ? field.ext_type : field.type;
+            EdgeType type = (field.type == Prim) ? field.ext_type : field.type;
             switch (type) {
                 case Maybe:
                 case One:
@@ -362,7 +362,7 @@ void generate_node_class(
         output << "        if id_map is None:" << std::endl;
         output << "            id_map = self.find_reachable()" << std::endl;
         for (const auto &field : all_fields) {
-            AttributeType type = (field.type == Prim) ? field.ext_type : field.type;
+            EdgeType type = (field.type == Prim) ? field.ext_type : field.type;
             switch (type) {
                 case One:
                     output << "        if self._attr_" << field.name << " is None:" << std::endl;

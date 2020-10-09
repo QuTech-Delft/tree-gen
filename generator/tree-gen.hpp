@@ -608,9 +608,9 @@
 namespace tree_gen {
 
 /**
- * Types of attributes that a node can have.
+ * Types of edges between nodes and primitives.
  */
-enum AttributeType {
+enum EdgeType {
 
     /**
      * Zero or one nodes.
@@ -649,22 +649,22 @@ enum AttributeType {
 
 };
 
-struct NodeType;
+struct Node;
 
 /**
- * Represents a child node.
+ * Represents a field.
  */
-struct ChildNode {
+struct Field {
 
     /**
-     * The type of child node.
+     * The edge type for the field.
      */
-    AttributeType type;
+    EdgeType type;
 
     /**
-     * The child node type, if any (depends on type).
+     * The field type, if any (depends on type).
      */
-    std::shared_ptr<NodeType> node_type;
+    std::shared_ptr<Node> node_type;
 
     /**
      * The primitive type name, if any (depends on type). This includes the
@@ -702,13 +702,13 @@ struct ChildNode {
      * as well, then it's actually a primitive, otherwise it's a node from
      * another tree.
      */
-    AttributeType ext_type;
+    EdgeType ext_type;
 };
 
 /**
  * Represents a type of AST node.
  */
-struct NodeType {
+struct Node {
 
     /**
      * Name in snake_case.
@@ -728,17 +728,17 @@ struct NodeType {
     /**
      * The node type this is derived from, if any.
      */
-    std::shared_ptr<NodeType> parent;
+    std::shared_ptr<Node> parent;
 
     /**
      * Node types derived from this one.
      */
-    std::vector<std::weak_ptr<NodeType>> derived;
+    std::vector<std::weak_ptr<Node>> derived;
 
     /**
      * Child nodes.
      */
-    std::vector<ChildNode> children;
+    std::vector<Field> fields;
 
     /**
      * Whether this node represents a recovered parse error.
@@ -748,14 +748,14 @@ struct NodeType {
     /**
      * Gathers all child nodes, including those in parent classes.
      */
-    std::vector<ChildNode> all_children();
+    std::vector<Field> all_fields();
 
 };
 
 /**
  * List of nodes.
  */
-using Nodes = std::vector<std::shared_ptr<NodeType>>;
+using Nodes = std::vector<std::shared_ptr<Node>>;
 
 /**
  * Convenience method for replacing all occurrences of a substring in a string
@@ -772,7 +772,7 @@ public:
     /**
      * The node being constructed.
      */
-    std::shared_ptr<NodeType> node;
+    std::shared_ptr<Node> node;
 
     /**
      * Construct a node with the given snake_case name and class documentation.
@@ -782,13 +782,13 @@ public:
     /**
      * Marks this node as deriving from the given node type.
      */
-    NodeBuilder *derive_from(std::shared_ptr<NodeType> parent);
+    NodeBuilder *derive_from(std::shared_ptr<Node> parent);
 
     /**
      * Adds a child node. `type` should be one of the edge types.
      */
     NodeBuilder *with_child(
-        AttributeType type,
+        EdgeType type,
         const std::string &node_name,
         const std::string &name,
         const std::string &doc = ""
@@ -801,7 +801,7 @@ public:
         const std::string &prim,
         const std::string &name,
         const std::string &doc = "",
-        AttributeType type = Prim
+        EdgeType type = Prim
     );
 
     /**
