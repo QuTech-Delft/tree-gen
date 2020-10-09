@@ -15,8 +15,8 @@ void serialize_test_a(const TestA &obj, tree::cbor::MapWriter &map) {
 
 TestA deserialize_test_a(const tree::cbor::MapReader &map) {
     return TestA {
-        .a = (int)map.at("a").as_int(),
-        .b = map.at("b").as_string()
+        (int)map.at("a").as_int(),
+        map.at("b").as_string()
     };
 }
 
