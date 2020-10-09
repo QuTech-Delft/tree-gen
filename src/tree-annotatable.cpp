@@ -131,7 +131,8 @@ void Annotatable::deserialize_annotations(const cbor::MapReader &map) {
         // All annotation keys start with an { and close with a }. We
         // immediately ignore any other keys.
         if (!it.first.empty() && (it.first[0] == '{') && (it.first[it.first.size() - 1] == '}')) {
-            auto value = serdes_registry.deserialize(it.first, it.second);
+            std::shared_ptr<Anything> value{};
+            value = serdes_registry.deserialize(it.first, it.second);
             if (value) {
                 annotations[value->get_type_index()] = value;
             }

@@ -89,6 +89,11 @@ add_library(
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-cbor.cpp"
 )
 
+# tree-lib has a global, which (thanks to MSVC declspec nonsense) requires a
+# header file to be different when the library is compiled compared to when it
+# is used.
+target_compile_definitions(tree-lib PRIVATE BUILDING_TREE_LIB)
+
 # Add the appropriate include paths.
 target_include_directories(
     tree-lib

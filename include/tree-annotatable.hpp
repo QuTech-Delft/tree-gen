@@ -280,6 +280,13 @@ public:
  * Global variable keeping track of all registered serialization and
  * deserialization functions for annotation objects.
  */
+#ifdef _MSC_VER
+#ifdef BUILDING_TREE_LIB
+__declspec(dllexport)
+#else
+__declspec(dllimport)
+#endif
+#endif
 extern SerDesRegistry serdes_registry;
 
 /**
