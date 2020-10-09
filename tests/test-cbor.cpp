@@ -55,7 +55,7 @@ int main() {
     auto reader = tree::cbor::Reader(std::string((const char*)TEST_CBOR, sizeof(TEST_CBOR)));
     CHECK(reader.is_array());
     auto ar = reader.as_array();
-    CHECK_EQ(ar.size(), 9);
+    CHECK_EQ(ar.size(), 9u);
     CHECK(ar.at(0).is_null());
     ar.at(0).as_null();
     CHECK(ar.at(1).is_bool());
@@ -64,7 +64,7 @@ int main() {
     CHECK(ar.at(2).as_bool());
     CHECK(ar.at(3).is_array());
     auto ar2 = ar.at(3).as_array();
-    CHECK_EQ(ar2.size(), 11);
+    CHECK_EQ(ar2.size(), 11u);
     CHECK(ar2.at(0).is_int());
     CHECK_EQ(ar2.at(0).as_int(), 0);
     CHECK_EQ(ar2.at(1).as_int(), 1);
@@ -78,7 +78,7 @@ int main() {
     CHECK_EQ(ar2.at(9).as_int(), 4294967296);
     CHECK_EQ(ar2.at(10).as_int(), 9223372036854775807);
     auto ar3 = ar.at(4).as_array();
-    CHECK_EQ(ar3.size(), 10);
+    CHECK_EQ(ar3.size(), 10u);
     CHECK(ar3.at(0).is_int());
     CHECK_EQ(ar3.at(0).as_int(), -1);
     CHECK_EQ(ar3.at(1).as_int(), -24);
@@ -98,7 +98,7 @@ int main() {
     CHECK_EQ(ar.at(7).as_binary(), "world");
     CHECK(ar.at(8).is_map());
     auto map = ar.at(8).as_map();
-    CHECK_EQ(map.size(), 2);
+    CHECK_EQ(map.size(), 2u);
     CHECK_EQ(map.at("a").as_string(), "b");
     CHECK_EQ(map.at("c").as_string(), "d");
 
@@ -135,12 +135,12 @@ int main() {
     // Test the writer using our own reader.
     auto reader2 = tree::cbor::Reader(encoded);
     auto map2 = reader2.as_map();
-    CHECK_EQ(map2.size(), 7);
+    CHECK_EQ(map2.size(), 7u);
     map2.at("null").as_null();
     CHECK_EQ(map2.at("false").as_bool(), false);
     CHECK_EQ(map2.at("true").as_bool(), true);
     auto ar4 = map2.at("int-array").as_array();
-    CHECK_EQ(ar4.size(), 10);
+    CHECK_EQ(ar4.size(), 10u);
     CHECK_EQ(ar4.at(0).as_int(), 0x3);
     CHECK_EQ(ar4.at(1).as_int(), 0x34);
     CHECK_EQ(ar4.at(2).as_int(), 0x3456);

@@ -742,9 +742,9 @@ void generate_visitor_class(
         header << "    virtual T visit_" << node->snake_case_name;
         header << "(" << node->title_case_name << " &node) {" << std::endl;
         if (node->parent) {
-            header << "        visit_" << node->parent->snake_case_name << "(node);" << std::endl;
+            header << "        return visit_" << node->parent->snake_case_name << "(node);" << std::endl;
         } else {
-            header << "        visit_node(node);" << std::endl;
+            header << "        return visit_node(node);" << std::endl;
         }
         header << "    }" << std::endl << std::endl;
     }
@@ -918,7 +918,6 @@ void generate_dumper_class(
         if (!attributes.empty()) {
             source << "    indent++;" << std::endl;
             for (auto &attrib : attributes) {
-                EdgeType type = (attrib.type == Prim) ? attrib.ext_type : attrib.type;
                 source << "    write_indent();" << std::endl;
                 source << "    out << \"" << attrib.name;
                 if (attrib.ext_type == Link || attrib.ext_type == OptLink) {

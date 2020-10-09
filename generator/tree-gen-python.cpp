@@ -513,6 +513,7 @@ void generate_node_class(
                         case Many:    output << "+"; break;
                         case OptLink: output << "@"; break;
                         case Link:    output << "$"; break;
+                        case Prim:    throw std::runtime_error("internal error, should be unreachable");
                     }
                     output << "':" << std::endl;
                     output << "            raise ValueError('unexpected edge type for field " << field.name << "')" << std::endl;
@@ -634,6 +635,7 @@ void generate_node_class(
                 case Many:    output << "+"; break;
                 case OptLink: output << "@"; break;
                 case Link:    output << "$"; break;
+                case Prim:    throw std::runtime_error("internal error, should be unreachable");
             }
             output << "'}" << std::endl;
             switch (type) {
@@ -660,6 +662,7 @@ void generate_node_class(
                     output << "        else:" << std::endl;
                     output << "            field['@l'] = id_map[id(self._attr_" << field.name << ")]" << std::endl;
                     break;
+                case Prim:    throw std::runtime_error("internal error, should be unreachable");
             }
             output << "        cbor['" << field.name << "'] = field" << std::endl;
         }

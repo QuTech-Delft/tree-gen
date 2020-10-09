@@ -730,6 +730,7 @@ StructureWriter &StructureWriter::operator=(StructureWriter &&src) {
     id = src.id;
     src.writer = nullptr;
     src.id = 0;
+    return *this;
 }
 
 /**

@@ -723,7 +723,7 @@ public:
         if (size() == 0) {
             return;
         }
-        if (pos < 0 || pos >= size()) {
+        if (pos < 0 || (size_t)pos >= size()) {
             pos = size() - 1;
         }
         this->vec.erase(this->vec.cbegin() + pos);
