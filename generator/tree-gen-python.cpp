@@ -189,7 +189,7 @@ void generate_node_class(
             output << "            raise TypeError('" << field.name << " must be of type " << type << "')" << std::endl;
         }
         output << "        self._attr_" << field.name << " = ";
-        output << type << "(val)" << std::endl << std::endl;
+        output << "val" << std::endl << std::endl;
 
         // Deleter. Doesn't actually delete, but rather replaces with the
         // default value.
@@ -296,7 +296,7 @@ void generate_node_class(
                         output << "        else:" << std::endl;
                         output << "            s.append('[\\n')" << std::endl;
                         output << "            for child in self." << field.name << ":" << std::endl;
-                        output << "                s.append(self." << field.name << ".dump(indent + 1, annotations, links) + '\\n')" << std::endl;
+                        output << "                s.append(child.dump(indent + 1, annotations, links) + '\\n')" << std::endl;
                         output << "            s.append('  '*indent + ']\\n')" << std::endl;
                         break;
 
@@ -371,7 +371,7 @@ void generate_node_class(
                     // fallthrough
                 case Maybe:
                     output << "        if self._attr_" << field.name << " is not None:" << std::endl;
-                    output << "            self._attr_" << field.name << ".check_well_formed(id_map)" << std::endl;
+                    output << "            self._attr_" << field.name << ".check_complete(id_map)" << std::endl;
                     break;
                 case Many:
                     output << "        if not self._attr_" << field.name << ":" << std::endl;
@@ -380,7 +380,7 @@ void generate_node_class(
                     // fallthrough
                 case Any:
                     output << "        for child in self._attr_" << field.name << ":" << std::endl;
-                    output << "            child.check_well_formed(id_map)" << std::endl;
+                    output << "            child.check_complete(id_map)" << std::endl;
                     break;
                 case Link:
                     output << "        if self._attr_" << field.name << " is None:" << std::endl;
@@ -481,7 +481,7 @@ void generate_node_class(
                "link field and the sequence number of the target node.",
                "        ");
     output << "        if not isinstance(cbor, dict):" << std::endl;
-    output << "            throw TypeError('node description object must be a dict')" << std::endl;
+    output << "            raise TypeError('node description object must be a dict')" << std::endl;
     output << "        typ = cbor.get('@t', None)" << std::endl;
     output << "        if typ is None:" << std::endl;
     output << "            raise ValueError('type (@t) field is missing from node serialization')" << std::endl;
@@ -626,7 +626,7 @@ void generate_node_class(
                 output << "            cbor['" << field.name << "'] = " << spec.py_serialize_fn << "(" << field.py_prim_type << ", self._attr_" << field.name << ")" << std::endl;
             }
         } else {
-            output << "        field = {'@T:': '";
+            output << "        field = {'@T': '";
             switch (type) {
                 case Maybe:   output << "?"; break;
                 case One:     output << "1"; break;
@@ -642,7 +642,7 @@ void generate_node_class(
                     output << "        if self._attr_" << field.name << " is None:" << std::endl;
                     output << "            field['@t'] = None" << std::endl;
                     output << "        else:" << std::endl;
-                    output << "            field.update(self._attr_" << field.name << "._serialize(id_map)" << std::endl;
+                    output << "            field.update(self._attr_" << field.name << "._serialize(id_map))" << std::endl;
                     break;
                 case Any:
                 case Many:
@@ -658,7 +658,7 @@ void generate_node_class(
                     output << "        if self._attr_" << field.name << " is None:" << std::endl;
                     output << "            field['@l'] = None" << std::endl;
                     output << "        else:" << std::endl;
-                    output << "            field['@l'] = id_map[id(self)]" << std::endl;
+                    output << "            field['@l'] = id_map[id(self._attr_" << field.name << ")]" << std::endl;
                     break;
             }
             output << "        cbor['" << field.name << "'] = field" << std::endl;
@@ -666,7 +666,7 @@ void generate_node_class(
     }
     output << std::endl;
     output << "        # Serialize annotations." << std::endl;
-    output << "        for key, val in cbor.items():" << std::endl;
+    output << "        for key, val in self._annot.items():" << std::endl;
     if (spec.py_serialize_fn.empty()) {
         output << "            try:" << std::endl;
         output << "                cbor['{%s}' % key] = _py_to_cbor(val)" << std::endl;
@@ -730,22 +730,22 @@ def _cbor_read_intlike(cbor, offset, info):
     if info < 24:
         return info, offset
 
-    # 25 is 8-bit following the info byte.
-    if info == 25:
+    # 24 is 8-bit following the info byte.
+    if info == 24:
         return cbor[offset], offset + 1
 
-    # 26 is 16-bit following the info byte.
-    if info == 26:
+    # 25 is 16-bit following the info byte.
+    if info == 25:
         val, = struct.unpack('>H', cbor[offset:offset+2])
         return val, offset + 2
 
-    # 27 is 32-bit following the info byte.
-    if info == 27:
+    # 26 is 32-bit following the info byte.
+    if info == 26:
         val, = struct.unpack('>I', cbor[offset:offset+4])
         return val, offset + 4
 
-    # 28 is 64-bit following the info byte.
-    if info == 28:
+    # 27 is 64-bit following the info byte.
+    if info == 27:
         val, = struct.unpack('>Q', cbor[offset:offset+8])
         return val, offset + 8
 
@@ -1140,18 +1140,19 @@ class Node(object):
             cbor = _cbor_to_py(cbor)
         seq_to_ob = {}
         links = []
-        cls._deserialize(cbor, seq_to_ob, links)
+        root = cls._deserialize(cbor, seq_to_ob, links)
         for link_setter, seq in links:
             ob = seq_to_ob.get(seq, None)
             if ob is None:
                 raise ValueError('found link to nonexistent object')
             link_setter(ob)
+        return root
 
     def serialize(self):
         """Serializes this node into its cbor representation in the form of a
         bytes object."""
         id_map = self.find_reachable()
-        self.check_well_formed(id_map)
+        self.check_complete(id_map)
         return _py_to_cbor(self._serialize(id_map))
 
     @staticmethod
@@ -1191,7 +1192,7 @@ class _Multiple(object):
     def __setitem__(self, idx, val):
         if not isinstance(val, self._T):
             raise TypeError(
-                'object {!r} at index {:d} is not an instance of {!r}'
+                'object {!r} is not an instance of {!r}'
                 .format(val, idx, self._T))
         self._l[idx] = val
 

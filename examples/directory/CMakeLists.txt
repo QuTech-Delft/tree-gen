@@ -35,4 +35,21 @@ target_link_libraries(directory-example tree-lib)
 # run it using `make test` or `ctest` as well. You don't need them as such in
 # your own project.
 enable_testing()
-add_test(directory-example directory-example)
+add_test(
+    NAME directory-example
+    COMMAND directory-example
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+# Only add the Python test if CMake is new enough for us to not have to bother
+# with FindPythonInterp.
+if(NOT ${CMAKE_VERSION} VERSION_LESS "3.12")
+    find_package(Python3 COMPONENTS Interpreter)
+    if(${Python3_FOUND})
+        add_test(
+            NAME directory-example-py
+            COMMAND ${Python3_EXECUTABLE} main.py ${CMAKE_CURRENT_BINARY_DIR}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+    endif()
+endif()

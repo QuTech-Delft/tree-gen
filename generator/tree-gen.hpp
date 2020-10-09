@@ -554,9 +554,7 @@
  *     #  - `True`, `False`, or `None`;
  *     #  - `str`s;
  *     #  - `bytes` objects.
- *     # The toplevel object must be a dict or a `bytes` object. In the latter
- *     # case, the `bytes` object must be a valid CBOR structure, with a map as
- *     # the root type.
+ *     # The toplevel object must be a dict.
  *     pass # TODO
  *
  * def deserialize(typ, val):

@@ -21,12 +21,16 @@ import subprocess
 import os
 import sys
 
-def rstify(output_filename, executable_filename, main_filename, *extra_filenames):
+def rstify(output_filename, executable_filename, main_filename, python_filename, *extra_filenames):
     """Tool for turning example code & output into an RST page for
     Sphinx/ReadTheDocs."""
 
     # Call the example executable and get its output.
-    output = subprocess.check_output(executable_filename).decode('UTF-8').split('\n')
+    return_to_dir = os.path.realpath(os.curdir)
+    fname = os.path.realpath(executable_filename)
+    os.chdir(os.path.dirname(executable_filename))
+    output = subprocess.check_output(fname).decode('UTF-8').split('\n')
+    os.chdir(return_to_dir)
 
     # Read the source files.
     with open(main_filename, 'r') as f:
@@ -80,6 +84,7 @@ def rstify(output_filename, executable_filename, main_filename, *extra_filenames
                 code.append(line)
                 line = next(main_lines)
             section['code'] = '\n'.join(code)
+            section['lang'] = 'C++'
 
             # Parse any output.
             out = []
@@ -94,6 +99,79 @@ def rstify(output_filename, executable_filename, main_filename, *extra_filenames
     except StopIteration:
         pass
 
+    if python_filename:
+
+        # Run the example Python file and get its output.
+        fname = os.path.realpath(python_filename)
+        output_dir = os.path.dirname(os.path.realpath(executable_filename))
+        return_to_dir = os.path.realpath(os.curdir)
+        os.chdir(os.path.dirname(fname))
+        output = subprocess.check_output([
+            sys.executable, os.path.basename(fname), output_dir
+        ]).decode('UTF-8').split('\n')
+        os.chdir(return_to_dir)
+
+        # Read the source file.
+        with open(fname, 'r') as f:
+            main = f.read()
+        files.append(('main.py', main))
+
+        # Strip header off of the file.
+        main = '# | ' + main.split('\n# | ', maxsplit=1)[1]
+
+        # Parse the contents of main and stdout and match them together using
+        # the markers.
+        main_lines = iter(main.split('\n'))
+        out_lines = iter(output)
+        try:
+            while True:
+                section = {}
+
+                # Parse # | comment block as markdown text.
+                text = []
+                strip_indent = 0
+                while True:
+                    line = next(main_lines)
+                    parts = line.split('# | ', maxsplit=1)
+                    if not line.strip():
+                        text.append('')
+                    elif len(parts) == 2:
+                        comment = parts[1]
+                        if comment.startswith(' '):
+                            comment = comment[1:]
+                        text.append(comment)
+                        strip_indent = len(parts[0])
+                    else:
+                        break
+                section['text'] = '\n'.join(text).strip()
+
+                # Parse the subsequent code for insertion as a Python code block.
+                code = []
+                while True:
+                    if 'marker()' in line:
+                        break
+                    if not line[:strip_indent].strip():
+                        line = line[strip_indent:]
+                    code.append(line)
+                    line = next(main_lines)
+                if code[0] == 'try:':
+                    code = [line[4:] for line in code[1:-2]]
+                section['code'] = '\n'.join(code)
+                section['lang'] = 'python3'
+
+                # Parse any output.
+                out = []
+                while True:
+                    line = next(out_lines)
+                    if '###MARKER###' in line:
+                        break
+                    out.append(line)
+                section['output'] = '\n'.join(out)
+
+                sections.append(section)
+        except StopIteration:
+            pass
+
     rst = []
 
     # Print the tutorial-esque sections.
@@ -101,7 +179,7 @@ def rstify(output_filename, executable_filename, main_filename, *extra_filenames
         rst.append(section['text'])
         rst.append('')
         if section['code'].strip():
-            rst.append('.. code-block:: C++')
+            rst.append('.. code-block:: ' + section['lang'])
             rst.append('  ')
             for line in section['code'].split('\n'):
                 rst.append('  ' + line)
@@ -176,8 +254,10 @@ try:
             '../doc/source/directory.gen.rst',
             'examples/directory/directory-example',
             '../examples/directory/main.cpp',
+            '../examples/directory/main.py',
             '../examples/directory/directory.tree',
             '../examples/directory/primitives.hpp',
+            '../examples/directory/primitives.py',
             '../examples/directory/CMakeLists.txt'
         )
 
@@ -185,6 +265,7 @@ try:
             '../doc/source/interpreter.gen.rst',
             'examples/interpreter/interpreter-example',
             '../examples/interpreter/main.cpp',
+            None,
             '../examples/interpreter/value.tree',
             '../examples/interpreter/program.tree',
             '../examples/interpreter/primitives.hpp',

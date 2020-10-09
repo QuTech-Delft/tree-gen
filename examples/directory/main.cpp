@@ -25,10 +25,11 @@ int main() {
     //
     // Using this tree, this example should teach you the basics of using
     // tree-gen trees. The tutorial runs you through the C++ code of
-    // ``main.cpp``, but be sure to check out ``directory.tree``,
-    // ``primitives.hpp``, and (if you want to reproduce it in your own project)
-    // ``CMakeLists.txt`` copied to the bottom of this page as well. You will
-    // also find the complete ``main.cpp`` there.
+    // ``main.cpp`` and Python code of ``main.py``, but be sure to check out
+    // ``directory.tree``, ``primitives.hpp``, ``primitives.hpp``, and (if you
+    // want to reproduce it in your own project) ``CMakeLists.txt`` copied to
+    // the bottom of this page as well. You will also find the complete
+    // ``main.cpp`` and ``main.py`` there.
     //
     // Let's start by making the root node using ``tree::base::make()``. This
     // works somewhat like ``std::make_shared()``, but instead of returning a
@@ -223,7 +224,15 @@ int main() {
     std::string cbor = tree::base::serialize(system);
     MARKER
 
-    // Let's have a look at a hexdump of that.
+    // Let's write it to a file; we'll load this in Python later.
+    {
+        std::ofstream cbor_output;
+        cbor_output.open("tree.cbor", std::ios::out | std::ios::trunc | std::ios::binary);
+        cbor_output << cbor;
+    }
+    MARKER
+
+    // Let's also have a look at a hexdump of that.
     int count = 0;
     for (char c : cbor) {
         if (count == 16) {
