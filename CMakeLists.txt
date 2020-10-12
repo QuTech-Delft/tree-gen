@@ -83,7 +83,7 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Create the library.
 add_library(
-    tree-lib
+    tree-lib-obj OBJECT
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-annotatable.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-base.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-cbor.cpp"
@@ -92,14 +92,20 @@ add_library(
 # tree-lib has a global, which (thanks to MSVC declspec nonsense) requires a
 # header file to be different when the library is compiled compared to when it
 # is used.
-target_compile_definitions(tree-lib PRIVATE BUILDING_TREE_LIB)
+target_compile_definitions(tree-lib-obj PRIVATE BUILDING_TREE_LIB)
 
 # Add the appropriate include paths.
 target_include_directories(
-    tree-lib
+    tree-lib-obj
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+
+# Main tree-gen library in shared or static form as managed by cmake's
+# internal BUILD_SHARED_LIBS variable.
+add_library(tree-lib $<TARGET_OBJECTS:tree-lib-obj>)
+target_include_directories(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRARIES>)
 
 
 #=============================================================================#
