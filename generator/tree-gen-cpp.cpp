@@ -475,43 +475,18 @@ void generate_node_class(
         format_doc(source, doc);
         source << "One<Node> " << node.title_case_name;
         source << "::clone() const {" << std::endl;
-        source << "    return ";
+        source << "    auto node = ";
         if (!spec.tree_namespace.empty()) {
             source << spec.tree_namespace << "::";
         }
-        source << "make<" << node.title_case_name << ">(" << std::endl;
-        bool first = true;
+        source << "make<" << node.title_case_name << ">(*this);" << std::endl;
         for (auto &field : all_fields) {
-            if (first) {
-                first = false;
-            } else {
-                source << "," << std::endl;
-            }
-            source << "        " << field.name;
-            switch (field.type) {
-                case Maybe:
-                case One:
-                case Any:
-                case Many:
-                    source << ".clone()";
-                    break;
-                case Prim:
-                    switch (field.ext_type) {
-                        case Maybe:
-                        case One:
-                        case Any:
-                        case Many:
-                            source << ".clone()";
-                            break;
-                        default:
-                            break;
-                    }
-                default:
-                    break;
+            auto type = (field.type == Prim) ? field.ext_type : field.type;
+            if (type == Maybe || type == One || type == Any || type == Many) {
+                source << "    node->" << field.name << " = this->" << field.name << ".clone();" << std::endl;
             }
         }
-        source << std::endl;
-        source << "    );" << std::endl;
+        source << "    return node;" << std::endl;
         source << "}" << std::endl << std::endl;
     }
 
