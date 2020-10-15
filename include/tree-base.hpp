@@ -1237,6 +1237,7 @@ public:
      * NotWellFormed exception is thrown.
      */
     void find_reachable(PointerMap &map) const override {
+        (void)map;
     }
 
     /**
