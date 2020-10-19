@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+if(CMAKE_VERSION VERSION_GREATER 3.0)
+    CMAKE_POLICY(SET CMP0048 NEW)
+endif()
 
 project(tree-gen CXX)
 
@@ -82,23 +85,31 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 #=============================================================================#
 
 # Create the library.
-add_library(
-    tree-lib-obj OBJECT
+set(
+    TREE_LIB_SRCS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-annotatable.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-base.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-cbor.cpp"
 )
+set(TREE_LIB_SRCS ${TREE_LIB_SRCS} PARENT_SCOPE)
+add_library(tree-lib-obj OBJECT ${TREE_LIB_SRCS})
 
 # tree-lib has a global, which (thanks to MSVC declspec nonsense) requires a
 # header file to be different when the library is compiled compared to when it
 # is used.
-target_compile_definitions(tree-lib-obj PRIVATE BUILDING_TREE_LIB)
+set(TREE_LIB_PRIVATE_DEFS BUILDING_TREE_LIB)
+set(TREE_LIB_PRIVATE_DEFS ${TREE_LIB_PRIVATE_DEFS} PARENT_SCOPE)
+target_compile_definitions(tree-lib-obj PRIVATE ${TREE_LIB_PRIVATE_DEFS})
 
 # Add the appropriate include paths.
+set(TREE_LIB_PRIVATE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(TREE_LIB_PRIVATE_INCLUDE ${TREE_LIB_PRIVATE_INCLUDE} PARENT_SCOPE)
+set(TREE_LIB_PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
 target_include_directories(
     tree-lib-obj
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
+    PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
 )
 
 # Main tree-gen library in shared or static form as managed by cmake's
