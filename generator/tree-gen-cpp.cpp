@@ -745,12 +745,12 @@ void generate_visitor_class(
     header << "    template <>" << std::endl;
     header << "    void Visitor<void>::raw_visit_node(Node &node, void *retval);" << std::endl << std::endl;
 
-    format_doc(source, "Internal visitor function for nodes of any type.", "    ");
-    source << "    template <>" << std::endl;
-    source << "    void Visitor<void>::raw_visit_node(Node &node, void *retval) {" << std::endl;
-    source << "        (void)retval;" << std::endl;
-    source << "        this->visit_node(node);" << std::endl;
-    source << "    }" << std::endl << std::endl;
+    format_doc(source, "Internal visitor function for nodes of any type.");
+    source << "template <>" << std::endl;
+    source << "void Visitor<void>::raw_visit_node(Node &node, void *retval) {" << std::endl;
+    source << "    (void)retval;" << std::endl;
+    source << "    this->visit_node(node);" << std::endl;
+    source << "}" << std::endl << std::endl;
 
     // Internal functions for all node types.
     for (auto &node : nodes) {
@@ -770,13 +770,13 @@ void generate_visitor_class(
         header << "    void Visitor<void>::raw_visit_" << node->snake_case_name;
         header << "(" << node->title_case_name << " &node, void *retval);" << std::endl << std::endl;
 
-        format_doc(source, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
-        source << "    template <>" << std::endl;
-        source << "    void Visitor<void>::raw_visit_" << node->snake_case_name;
+        format_doc(source, "Internal visitor function for `" + node->title_case_name + "` nodes.");
+        source << "template <>" << std::endl;
+        source << "void Visitor<void>::raw_visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node, void *retval) {" << std::endl;
-        source << "        (void)retval;" << std::endl;
-        source << "        this->visit_" << node->snake_case_name << "(node);" << std::endl;
-        source << "    }" << std::endl << std::endl;
+        source << "    (void)retval;" << std::endl;
+        source << "    this->visit_" << node->snake_case_name << "(node);" << std::endl;
+        source << "}" << std::endl << std::endl;
     }
 
 }
