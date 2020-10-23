@@ -378,7 +378,8 @@ void generate_node_class(
         source << "::find_reachable(::tree::base::PointerMap &map) const {" << std::endl;
         source << "    (void)map;" << std::endl;
         for (auto &field : all_fields) {
-            switch (field.type) {
+            auto type = (field.type == Prim) ? field.ext_type : field.type;
+            switch (type) {
                 case Maybe:
                 case One:
                 case Any:
@@ -404,7 +405,8 @@ void generate_node_class(
             source << "    throw ::tree::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
         } else {
             for (auto &field : all_fields) {
-                switch (field.type) {
+                auto type = (field.type == Prim) ? field.ext_type : field.type;
+                switch (type) {
                     case Maybe:
                     case One:
                     case Any:
