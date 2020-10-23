@@ -522,6 +522,7 @@ void generate_node_class(
             source << "    ::tree::cbor::MapWriter &map," << std::endl;
             source << "    const ::tree::base::PointerMap &ids" << std::endl;
             source << ") const {" << std::endl;
+            source << "    (void)ids;" << std::endl;
             source << "    map.append_string(\"@t\", \"" << node.title_case_name << "\");" << std::endl;
             bool first = true;
             for (const auto &field : all_fields) {
@@ -548,6 +549,7 @@ void generate_node_class(
             format_doc(source, "Writes a debug dump of this node to the given stream.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
             source << node.title_case_name << "::deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids) {" << std::endl;
+            source << "    (void)ids;" << std::endl;
             source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
             source << "    if (type != \"" << node.title_case_name << "\") {" << std::endl;
             source << "        throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;

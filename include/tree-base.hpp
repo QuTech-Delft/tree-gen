@@ -1279,6 +1279,7 @@ protected:
      * actual tree yet.
      */
     void deserialize(const cbor::MapReader &map, IdentifierMap &ids) {
+        (void)ids;
         // Note: this is in a function rather than in the constructor, because
         // serdes_edge_type() would map to the base class if we just chain
         // constructors, and we don't want to repeat this whole mess for Many.
