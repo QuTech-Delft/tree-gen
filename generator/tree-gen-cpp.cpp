@@ -522,6 +522,7 @@ void generate_node_class(
             source << "    ::tree::cbor::MapWriter &map," << std::endl;
             source << "    const ::tree::base::PointerMap &ids" << std::endl;
             source << ") const {" << std::endl;
+            source << "    (void)ids;" << std::endl;
             source << "    map.append_string(\"@t\", \"" << node.title_case_name << "\");" << std::endl;
             bool first = true;
             for (const auto &field : all_fields) {
@@ -548,6 +549,7 @@ void generate_node_class(
             format_doc(source, "Writes a debug dump of this node to the given stream.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
             source << node.title_case_name << "::deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids) {" << std::endl;
+            source << "    (void)ids;" << std::endl;
             source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
             source << "    if (type != \"" << node.title_case_name << "\") {" << std::endl;
             source << "        throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;
@@ -743,12 +745,12 @@ void generate_visitor_class(
     header << "    template <>" << std::endl;
     header << "    void Visitor<void>::raw_visit_node(Node &node, void *retval);" << std::endl << std::endl;
 
-    format_doc(source, "Internal visitor function for nodes of any type.", "    ");
-    source << "    template <>" << std::endl;
-    source << "    void Visitor<void>::raw_visit_node(Node &node, void *retval) {" << std::endl;
-    source << "        (void)retval;" << std::endl;
-    source << "        this->visit_node(node);" << std::endl;
-    source << "    }" << std::endl << std::endl;
+    format_doc(source, "Internal visitor function for nodes of any type.");
+    source << "template <>" << std::endl;
+    source << "void Visitor<void>::raw_visit_node(Node &node, void *retval) {" << std::endl;
+    source << "    (void)retval;" << std::endl;
+    source << "    this->visit_node(node);" << std::endl;
+    source << "}" << std::endl << std::endl;
 
     // Internal functions for all node types.
     for (auto &node : nodes) {
@@ -768,13 +770,13 @@ void generate_visitor_class(
         header << "    void Visitor<void>::raw_visit_" << node->snake_case_name;
         header << "(" << node->title_case_name << " &node, void *retval);" << std::endl << std::endl;
 
-        format_doc(source, "Internal visitor function for `" + node->title_case_name + "` nodes.", "    ");
-        source << "    template <>" << std::endl;
-        source << "    void Visitor<void>::raw_visit_" << node->snake_case_name;
+        format_doc(source, "Internal visitor function for `" + node->title_case_name + "` nodes.");
+        source << "template <>" << std::endl;
+        source << "void Visitor<void>::raw_visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node, void *retval) {" << std::endl;
-        source << "        (void)retval;" << std::endl;
-        source << "        this->visit_" << node->snake_case_name << "(node);" << std::endl;
-        source << "    }" << std::endl << std::endl;
+        source << "    (void)retval;" << std::endl;
+        source << "    this->visit_" << node->snake_case_name << "(node);" << std::endl;
+        source << "}" << std::endl << std::endl;
     }
 
 }
