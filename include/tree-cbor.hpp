@@ -544,5 +544,5 @@ public:
 
 };
 
-}
-}
+} // namespace cbor
+} // namespace tree
