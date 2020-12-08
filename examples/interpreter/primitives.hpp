@@ -124,8 +124,6 @@ public:
 
 };
 
-} // namespace primitives
-
 /**
  * Stream << overload for source location objects.
  */
@@ -133,3 +131,5 @@ inline std::ostream& operator<<(std::ostream& os, const primitives::SourceLocati
     os << object.filename << ":" << object.line << ":" << object.column;
     return os;
 }
+
+} // namespace primitives

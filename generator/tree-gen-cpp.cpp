@@ -1234,6 +1234,15 @@ void generate(
     source << "    this->visit_internal(visitor);" << std::endl;
     source << "}" << std::endl << std::endl;
 
+    // Overload the stream write operator.
+    format_doc(header, "Stream << overload for tree nodes (writes debug dump).");
+    header << "std::ostream &operator<<(std::ostream &os, const Node &object);" << std::endl << std::endl;
+    format_doc(source, "Stream << overload for tree nodes (writes debug dump).");
+    source << "std::ostream &operator<<(std::ostream &os, const Node &object) {" << std::endl;
+    source << "    const_cast<Node&>(object).dump(os);" << std::endl;
+    source << "    return os;" << std::endl;
+    source << "}" << std::endl << std::endl;
+
     // Close the namespaces.
     for (auto name_it = specification.namespaces.rbegin(); name_it != specification.namespaces.rend(); name_it++) {
         header << "} // namespace " << *name_it << std::endl;
@@ -1241,19 +1250,6 @@ void generate(
     }
     header << std::endl;
     source << std::endl;
-
-    // Overload the stream write operator.
-    std::string name_space = "";
-    for (auto &name : specification.namespaces) {
-        name_space += "::" + name;
-    }
-    format_doc(header, "Stream << overload for tree nodes (writes debug dump).");
-    header << "std::ostream& operator<<(std::ostream& os, const " << name_space << "::Node& object);" << std::endl << std::endl;
-    format_doc(source, "Stream << overload for tree nodes (writes debug dump).");
-    source << "std::ostream& operator<<(std::ostream& os, const " << name_space << "::Node& object) {" << std::endl;
-    source << "    const_cast<" << name_space << "::Node&>(object).dump(os);" << std::endl;
-    source << "    return os;" << std::endl;
-    source << "}" << std::endl << std::endl;
 
 }
 

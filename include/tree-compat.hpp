@@ -15,4 +15,4 @@ typedef long long signed_size_t;
 typedef ssize_t signed_size_t;
 #endif
 
-}
+} // namespace tree
