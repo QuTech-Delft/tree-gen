@@ -57,10 +57,10 @@ tree_namespace                                      WITHOUT_STR(TREE_NS);
 initialize_function                                 WITHOUT_STR(INIT_FN);
 serdes_functions                                    WITHOUT_STR(SERDES_FNS);
 location                                            WITHOUT_STR(SOURCE_LOC);
-include.*                                           WITH_STR(INCLUDE);
-src_include.*                                       WITH_STR(SRC_INCLUDE);
-import.*                                            WITH_STR(PY_INCLUDE);
-from.*import.*                                      WITH_STR(PY_INCLUDE);
+include[ \t].*                                      WITH_STR(INCLUDE);
+src_include[ \t].*                                  WITH_STR(SRC_INCLUDE);
+import[ \t].*                                       WITH_STR(PY_INCLUDE);
+from[ \t].*[ \t]import[ \t].*                       WITH_STR(PY_INCLUDE);
 
     /* Namespaces */
 namespace                                           WITHOUT_STR(NAMESPACE);
