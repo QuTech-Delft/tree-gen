@@ -161,7 +161,12 @@ void generate_node_class(
         std::string type = (field.type == Prim) ? field.py_prim_type : field.node_type->title_case_name;
 
         if (is_any_or_many) {
-            type = "Multi" + type;
+            auto split = type.rfind('.');
+            if (split == std::string::npos) {
+                type = "Multi" + type;
+            } else {
+                type = type.substr(0, split + 1) + "Multi" + type.substr(split + 1);
+            }
         }
 
         // Getter.
@@ -691,6 +696,9 @@ void generate_node_class(
     output << "    _T = " << node.title_case_name << std::endl;
     output << std::endl << std::endl;
 
+    // Add to the typemap.
+    output << "_typemap['" << node.title_case_name << "'] = " << node.title_case_name << std::endl << std::endl;
+
 }
 
 /**
@@ -723,6 +731,9 @@ void generate(
 
     // Write the classes that are always the same.
     output << R"PY(
+_typemap = {}
+
+
 def _cbor_read_intlike(cbor, offset, info):
     """Parses the additional information and reads any additional bytes it
     specifies the existence of, and returns the encoded integer. offset
@@ -1160,7 +1171,15 @@ class Node(object):
 
     @staticmethod
     def _deserialize(cbor, seq_to_ob, links):
-        raise NotImplementedError('please call deserialize() on the node type you\'re expecting')
+        if not isinstance(cbor, dict):
+            raise TypeError('node description object must be a dict')
+        typ = cbor.get('@t', None)
+        if typ is None:
+            raise ValueError('type (@t) field is missing from node serialization')
+        node_type = _typemap.get(cbor.get('@t'), None)
+        if node_type is None:
+            raise ValueError('unknown node type (@t): ' + str(cbor.get('@t')))
+        return node_type._deserialize(cbor, seq_to_ob, links)
 
 )PY" << R"PY(
 @functools.total_ordering
@@ -1281,6 +1300,12 @@ class _Multiple(object):
         copy = self.copy()
         copy *= other
         return copy
+
+
+class MultiNode(_Multiple):
+    """Wrapper for an edge with multiple Node objects."""
+
+    _T = Node
 
 
 def _cloned(obj):
