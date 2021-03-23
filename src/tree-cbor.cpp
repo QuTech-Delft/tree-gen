@@ -397,7 +397,9 @@ double Reader::as_float() const {
     }
     size_t offset = 1;
     uint64_t value = read_intlike(27, offset);
-    return *(double*)(&value);
+    double retval = 0.0;
+    memcpy(&retval, &value, sizeof(retval));
+    return retval;
 }
 
 /**
