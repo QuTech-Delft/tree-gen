@@ -53,13 +53,13 @@
 
 /* YYSTYPE union */
 %union {
-    char           	        *str;
+    char                    *str;
     std::string             *xstr;
     tree_gen::NodeBuilder   *nbld;
 };
 
 /* Typenames for nonterminals */
-%type <xstr> Documentation Identifier String
+%type <xstr> Documentation Identifier
 %type <nbld> Node
 
 /* Tokens */
@@ -70,7 +70,6 @@
 %token ERROR
 %token MAYBE ONE ANY MANY OLINK LINK EXT
 %token <str> IDENT
-%token <str> STRING
 %token '{' '}' '<' '>' ':' ';'
 %token BAD_CHARACTER
 
@@ -86,9 +85,6 @@ Documentation   :                                                               
 
 Identifier      : IDENT                                                         { TRY $$ = new std::string($1); std::free($1); CATCH }
                 | Identifier NAMESPACE_SEP IDENT                                { TRY $$ = $1; *$$ += "::"; *$$ += $3; std::free($3); CATCH }
-                ;
-
-String          : STRING                                                        { TRY $1[std::strlen($1) - 1] = 0; $$ = new std::string($1 + 1); std::free($1); CATCH }
                 ;
 
 Node            : Documentation IDENT '{'                                       { TRY auto nb = std::make_shared<tree_gen::NodeBuilder>(std::string($2), *$1); specification.add_node(nb); $$ = nb.get(); delete $1; std::free($2); CATCH }

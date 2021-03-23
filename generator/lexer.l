@@ -83,9 +83,6 @@ external                                            WITHOUT_STR(EXT);
     /* Identifiers */
 [_a-zA-Z][_a-zA-Z0-9]*                              WITH_STR(IDENT);
 
-    /* Strings */
-["][^"]+["]                                         WITH_STR(STRING);
-
     /* Interpunction */
 [{}<>:;]                                            OPERATOR;
 
