@@ -255,6 +255,20 @@ public:
     Maybe(Maybe<S> &&value) : val(std::static_pointer_cast<T>(std::move(value.val))) {}
 
     /**
+     * Constructs a new node in-place.
+     */
+    template<typename S = T, class... Args>
+    void emplace(Args&&... args) {
+        val = std::static_pointer_cast<T>(std::make_shared<S>(std::forward<Args>(args)...));
+    }
+
+    /**
+     * Constructs a new node.
+     */
+    template<typename S = T, class... Args>
+    static One<T> make(Args&&... args);
+
+    /**
      * Sets the value to a reference to the given object, or clears it if null.
      */
     template <class S>
@@ -672,6 +686,15 @@ One<typename std::remove_const<T>::type> Maybe<T>::clone() const {
 }
 
 /**
+ * Constructs a new node.
+ */
+template<typename T>
+template<typename S, class... Args>
+One<T> Maybe<T>::make(Args&&... args) {
+    return One<T>(std::static_pointer_cast<T>(std::make_shared<S>(std::forward<Args>(args)...)));
+}
+
+/**
  * Constructs a One object, analogous to std::make_shared.
  */
 template <class T, typename... Args>
@@ -728,10 +751,9 @@ public:
     /**
      * Less versatile alternative for adding nodes with less verbosity.
      */
-    template <class S, typename... Args>
+    template <class S = T, typename... Args>
     Any &emplace(Args... args) {
-        this->vec.emplace_back(
-            std::static_pointer_cast<T>(make<S>(args...).get_ptr()));
+        this->vec.emplace_back(std::static_pointer_cast<T>(std::make_shared<S>(std::forward<Args>(args)...)));
         return *this;
     }
 
