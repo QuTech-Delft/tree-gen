@@ -336,9 +336,10 @@ public:
 
     /**
      * Returns a mutable reference to the contained value. Raises an
-     * `out_of_range` when the reference is empty.
+     * `out_of_range` when the reference is empty. Note that this is const
+     * because the pointer does not change.
      */
-    T &deref() {
+    T &deref() const {
         if (!val) {
             throw std::out_of_range("dereferencing empty Maybe/One object");
         }
@@ -346,41 +347,18 @@ public:
     }
 
     /**
-     * Mutable dereference operator, shorthand for `deref()`.
+     * Mutable dereference operator, shorthand for `deref()`. Note that this is
+     * const because the pointer does not change.
      */
-    T &operator*() {
+    T &operator*() const {
         return deref();
     }
 
     /**
-     * Mutable dereference operator, shorthand for `deref()`.
+     * Mutable dereference operator, shorthand for `deref()`. Note that this is
+     * const because the pointer does not change.
      */
-    T *operator->() {
-        return &deref();
-    }
-
-    /**
-     * Returns a const reference to the contained value. Raises an
-     * `out_of_range` when the reference is empty.
-     */
-    const T &deref() const {
-        if (!val) {
-            throw std::out_of_range("dereferencing empty Maybe/One object");
-        }
-        return *val;
-    }
-
-    /**
-     * Constant dereference operator, shorthand for `deref()`.
-     */
-    const T &operator*() const {
-        return deref();
-    }
-
-    /**
-     * Constant dereference operator, shorthand for `deref()`.
-     */
-    const T *operator->() const {
+    T *operator->() const {
         return &deref();
     }
 
@@ -409,6 +387,13 @@ public:
     }
 
     /**
+     * Makes the contained value const.
+     */
+    Maybe<const T> as_const() const {
+        return Maybe<const T>(std::const_pointer_cast<const T>(val));
+    }
+
+    /**
      * Visit this object.
      */
     template <class V>
@@ -421,7 +406,7 @@ public:
     /**
      * Equality operator.
      */
-    bool operator==(const Maybe& rhs) const {
+    bool operator==(const Maybe &rhs) const {
         if (val && rhs.get_ptr()) {
             if (val == rhs.val) {
                 return true;
@@ -436,7 +421,7 @@ public:
     /**
      * Inequality operator.
      */
-    inline bool operator!=(const Maybe& rhs) const {
+    inline bool operator!=(const Maybe &rhs) const {
         return !(*this == rhs);
     }
 
@@ -500,14 +485,14 @@ public:
     /**
      * Makes a shallow copy of this subtree.
      */
-    One<T> copy() const;
+    One<typename std::remove_const<T>::type> copy() const;
 
     /**
      * Makes a deep copy of this subtree. Note that links are not modified; if
      * you want to completely clone a full tree that contains links you'll have
      * to use serdes or relink all links yourself.
      */
-    One<T> clone() const;
+    One<typename std::remove_const<T>::type> clone() const;
 
 protected:
 
@@ -646,7 +631,7 @@ public:
  * Makes a shallow copy of this value.
  */
 template <class T>
-One<T> Maybe<T>::copy() const {
+One<typename std::remove_const<T>::type> Maybe<T>::copy() const {
     if (val) {
         return val->copy();
     } else {
@@ -658,7 +643,7 @@ One<T> Maybe<T>::copy() const {
  * Makes a deep copy of this value.
  */
 template <class T>
-One<T> Maybe<T>::clone() const {
+One<typename std::remove_const<T>::type> Maybe<T>::clone() const {
     if (val) {
         return val->clone();
     } else {
@@ -795,23 +780,15 @@ public:
      * Returns a mutable reference to the contained value at the given index.
      * Raises an `out_of_range` when the reference is empty.
      */
-    One<T> &at(size_t index) {
+    const One<T> &at(size_t index) const {
         return vec.at(index);
     }
 
     /**
-     * Shorthand for `at()`. Unlike std::vector's operator[], this also checks
-     * bounds.
+     * Returns a mutable reference to the contained value at the given index.
+     * Raises an `out_of_range` when the reference is empty.
      */
-    One<T> &operator[] (size_t index) {
-        return at(index);
-    }
-
-    /**
-     * Returns an immutable reference to the contained value at the given
-     * index. Raises an `out_of_range` when the reference is empty.
-     */
-    const One<T> &at(size_t index) const {
+    One<T> &at(size_t index) {
         return vec.at(index);
     }
 
@@ -824,10 +801,30 @@ public:
     }
 
     /**
+     * Shorthand for `at()`. Unlike std::vector's operator[], this also checks
+     * bounds.
+     */
+    One<T> &operator[] (size_t index) {
+        return at(index);
+    }
+
+    /**
      * Returns a copy of the reference to the first value in the list. If the
      * list is empty, an empty reference is returned.
      */
-    Maybe<T> front() const {
+    const Maybe<T> front() const {
+        if (vec.empty()) {
+            return Maybe<T>();
+        } else {
+            return vec.front();
+        }
+    }
+
+    /**
+     * Returns a copy of the reference to the first value in the list. If the
+     * list is empty, an empty reference is returned.
+     */
+    Maybe<T> front() {
         if (vec.empty()) {
             return Maybe<T>();
         } else {
@@ -839,7 +836,19 @@ public:
      * Returns a copy of the reference to the last value in the list. If the
      * list is empty, an empty reference is returned.
      */
-    Maybe<T> back() const {
+    const Maybe<T> back() const {
+        if (vec.empty()) {
+            return Maybe<T>();
+        } else {
+            return vec.back();
+        }
+    }
+
+    /**
+     * Returns a copy of the reference to the last value in the list. If the
+     * list is empty, an empty reference is returned.
+     */
+    Maybe<T> back() {
         if (vec.empty()) {
             return Maybe<T>();
         } else {
@@ -974,12 +983,12 @@ public:
     /**
      * Makes a shallow copy of these values.
      */
-    Many<T> copy() const;
+    Many<typename std::remove_const<T>::type> copy() const;
 
     /**
      * Makes a deep copy of these values.
      */
-    Many<T> clone() const;
+    Many<typename std::remove_const<T>::type> clone() const;
 
 protected:
 
@@ -1089,8 +1098,8 @@ public:
  * Makes a shallow copy of these values.
  */
 template <class T>
-Many<T> Any<T>::copy() const {
-    Many<T> c{};
+Many<typename std::remove_const<T>::type> Any<T>::copy() const {
+    Many<typename std::remove_const<T>::type> c{};
     for (auto &sptr : this->vec) {
         c.add(sptr.copy());
     }
@@ -1101,8 +1110,8 @@ Many<T> Any<T>::copy() const {
  * Makes a deep copy of these values.
  */
 template <class T>
-Many<T> Any<T>::clone() const {
-    Many<T> c{};
+Many<typename std::remove_const<T>::type> Any<T>::clone() const {
+    Many<typename std::remove_const<T>::type> c{};
     for (auto &sptr : this->vec) {
         c.add(sptr.clone());
     }
@@ -1179,7 +1188,7 @@ public:
      */
     template <class S>
     OptLink &operator=(const Maybe<S> &value) {
-        set<S>(std::move(value));
+        set<S>(value);
     }
 
     /**
@@ -1187,7 +1196,7 @@ public:
      */
     template <class S>
     void set(Maybe<S> &&value) {
-        val = std::static_pointer_cast<T>(value.get_ptr());
+        val = std::static_pointer_cast<T>(std::move(value.get_ptr()));
     }
 
     /**
@@ -1291,6 +1300,15 @@ public:
     template <class S>
     Maybe<S> as() const {
         return Maybe<S>(std::dynamic_pointer_cast<S>(val.lock()));
+    }
+
+    /**
+     * Up- or downcasts this value. If the cast succeeds, the returned value
+     * is nonempty and its shared_ptr points to the same data block as this
+     * value does. If the cast fails, an empty Maybe is returned.
+     */
+    Maybe<const T> as_const() const {
+        return Maybe<const T>(std::const_pointer_cast<const T>(val.lock()));
     }
 
     /**
