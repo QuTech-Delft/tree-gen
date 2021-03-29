@@ -39,11 +39,28 @@ template <class T>
 class Link;
 
 /**
+ * Exception used for generic runtime errors.
+ */
+class RuntimeError : public std::runtime_error {
+public:
+    explicit RuntimeError(const std::string &msg) : std::runtime_error(msg) {}
+};
+
+/**
  * Exception used by PointerMap to indicate not-well-formedness.
  */
-class NotWellFormed : public std::runtime_error {
+class NotWellFormed : public RuntimeError {
 public:
-    explicit NotWellFormed(const std::string &msg) : std::runtime_error(msg) {}
+    explicit NotWellFormed(const std::string &msg) : RuntimeError(msg) {}
+};
+
+/**
+ * Exception used when an index is out of range or an empty reference is
+ * dereferenced.
+ */
+class OutOfRange : public std::out_of_range {
+public:
+    explicit OutOfRange(const std::string &msg) : std::out_of_range(msg) {}
 };
 
 /**
@@ -341,7 +358,10 @@ public:
      */
     T &deref() const {
         if (!val) {
-            throw std::out_of_range("dereferencing empty Maybe/One object");
+            throw OutOfRange(
+                std::string("dereferencing empty Maybe/One object or type ") +
+                typeid(T).name()
+            );
         }
         return *val;
     }
@@ -513,7 +533,7 @@ protected:
         // serdes_edge_type() would map to the base class if we just chain
         // constructors, and we don't want to repeat this whole mess for One.
         if (map.at("@T").as_string() != serdes_edge_type()) {
-            throw std::runtime_error("Schema validation failed: unexpected edge type");
+            throw RuntimeError("Schema validation failed: unexpected edge type");
         }
         auto type = map.at("@t");
         if (type.is_null()) {
@@ -725,7 +745,7 @@ public:
     template <class S>
     void add_raw(S *ob, signed_size_t pos=-1) {
         if (!ob) {
-            throw std::runtime_error("add_raw called with nullptr!");
+            throw RuntimeError("add_raw called with nullptr!");
         }
         if (pos < 0 || (size_t)pos >= size()) {
             this->vec.emplace_back(std::shared_ptr<T>(static_cast<T*>(ob)));
@@ -1009,7 +1029,7 @@ protected:
         // serdes_edge_type() would map to the base class if we just chain
         // constructors, and we don't want to repeat this whole mess for Many.
         if (map.at("@T").as_string() != serdes_edge_type()) {
-            throw std::runtime_error("Schema validation failed: unexpected edge type");
+            throw RuntimeError("Schema validation failed: unexpected edge type");
         }
         for (const auto &it : map.at("@d").as_array()) {
             vec.emplace_back(it.as_map(), ids);
@@ -1234,7 +1254,10 @@ public:
      */
     T &deref() {
         if (val.expired()) {
-            throw std::out_of_range("dereferencing empty or expired (Opt)Link object");
+            throw OutOfRange(
+                std::string("dereferencing empty or expired (Opt)Link object of type ") +
+                typeid(T).name()
+            );
         }
         return *(val.lock());
     }
@@ -1259,7 +1282,7 @@ public:
      */
     const T &deref() const {
         if (val.expired()) {
-            throw std::out_of_range("dereferencing empty or expired (Opt)Link object");
+            throw OutOfRange("dereferencing empty or expired (Opt)Link object");
         }
         return *(val.lock());
     }
@@ -1397,7 +1420,7 @@ protected:
         // serdes_edge_type() would map to the base class if we just chain
         // constructors, and we don't want to repeat this whole mess for Many.
         if (map.at("@T").as_string() != serdes_edge_type()) {
-            throw std::runtime_error("Schema validation failed: unexpected edge type");
+            throw RuntimeError("Schema validation failed: unexpected edge type");
         }
         val.reset();
     }
