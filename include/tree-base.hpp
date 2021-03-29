@@ -423,7 +423,11 @@ public:
      */
     bool operator==(const Maybe& rhs) const {
         if (val && rhs.get_ptr()) {
-            return *val == *rhs;
+            if (val == rhs.val) {
+                return true;
+            } else {
+                return *val == *rhs;
+            }
         } else {
             return val == rhs.get_ptr();
         }
@@ -434,6 +438,34 @@ public:
      */
     inline bool operator!=(const Maybe& rhs) const {
         return !(*this == rhs);
+    }
+
+    /**
+     * Pointer-based greater-than.
+     */
+    bool operator>(const Maybe &rhs) const {
+        return val > rhs.val;
+    }
+
+    /**
+     * Pointer-based greater-equal.
+     */
+    bool operator>=(const Maybe &rhs) const {
+        return val >= rhs.val;
+    }
+
+    /**
+     * Pointer-based less-than.
+     */
+    bool operator<(const Maybe &rhs) const {
+        return val < rhs.val;
+    }
+
+    /**
+     * Pointer-based less-equal.
+     */
+    bool operator<=(const Maybe &rhs) const {
+        return val <= rhs.val;
     }
 
     /**
@@ -656,6 +688,15 @@ protected:
 
 public:
 
+    using iterator = typename std::vector<One<T>>::iterator;
+    using Iterator = iterator;
+    using const_iterator = typename std::vector<One<T>>::const_iterator;
+    using ConstIterator = const_iterator;
+    using reverse_iterator = typename std::vector<One<T>>::reverse_iterator;
+    using ReverseIterator = reverse_iterator;
+    using const_reverse_iterator = typename std::vector<One<T>>::const_reverse_iterator;
+    using ConstReverseIterator = const_reverse_iterator;
+
     /**
      * Constructs an empty Any.
      */
@@ -783,6 +824,18 @@ public:
     }
 
     /**
+     * Returns a copy of the reference to the first value in the list. If the
+     * list is empty, an empty reference is returned.
+     */
+    Maybe<T> front() const {
+        if (vec.empty()) {
+            return Maybe<T>();
+        } else {
+            return vec.front();
+        }
+    }
+
+    /**
      * Returns a copy of the reference to the last value in the list. If the
      * list is empty, an empty reference is returned.
      */
@@ -797,29 +850,57 @@ public:
     /**
      * `begin()` for for-each loops.
      */
-    typename std::vector<One<T>>::iterator begin() {
+    Iterator begin() {
         return vec.begin();
     }
 
     /**
      * `begin()` for for-each loops.
      */
-    typename std::vector<One<T>>::const_iterator begin() const {
+    ConstIterator begin() const {
         return vec.begin();
     }
 
     /**
      * `end()` for for-each loops.
      */
-    typename std::vector<One<T>>::iterator end() {
+    Iterator end() {
         return vec.end();
     }
 
     /**
      * `end()` for for-each loops.
      */
-    typename std::vector<One<T>>::const_iterator end() const {
+    ConstIterator end() const {
         return vec.end();
+    }
+
+    /**
+     * `begin()` for for-each loops.
+     */
+    ReverseIterator rbegin() {
+        return vec.rbegin();
+    }
+
+    /**
+     * `begin()` for for-each loops.
+     */
+    ConstReverseIterator rbegin() const {
+        return vec.rbegin();
+    }
+
+    /**
+     * `end()` for for-each loops.
+     */
+    ReverseIterator rend() {
+        return vec.rend();
+    }
+
+    /**
+     * `end()` for for-each loops.
+     */
+    ConstReverseIterator rend() const {
+        return vec.rend();
     }
 
     /**
@@ -846,6 +927,20 @@ public:
      */
     inline bool operator!=(const Any& rhs) const {
         return !(*this == rhs);
+    }
+
+    /**
+     * Returns an immutable reference to the underlying vector.
+     */
+    const std::vector<One<T>> &get_vec() const {
+        return vec;
+    }
+
+    /**
+     * Returns a mutable reference to the underlying vector.
+     */
+    std::vector<One<T>> &get_vec() {
+        return vec;
     }
 
     /**
