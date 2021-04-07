@@ -779,7 +779,7 @@ public:
     /**
      * Extends this Any with another.
      */
-    void extend(Any<T> &other) {
+    void extend(const Any<T> &other) {
         this->vec.insert(this->vec.end(), other.vec.begin(), other.vec.end());
     }
 
