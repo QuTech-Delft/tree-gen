@@ -731,6 +731,12 @@ public:
     Any() = default;
 
     /**
+     * Constructs an initialized Any.
+     */
+    Any(std::initializer_list<One<T>> inits) : vec(inits) {
+    }
+
+    /**
      * Adds the given value. No-op when the value is empty.
      */
     template <class S>
@@ -1095,6 +1101,12 @@ public:
      * Constructs an empty Many.
      */
     Many() = default;
+
+    /**
+     * Constructs an initialized Any.
+     */
+    Many(std::initializer_list<One<T>> inits) : Any<T>(inits) {
+    }
 
     /**
      * Checks completeness of this node given a map of raw, internal Node
