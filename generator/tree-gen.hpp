@@ -148,6 +148,7 @@
  *
  *     [zero or more specializations of this node; recursive structure]
  *
+ *     [optional reorder directive]
  * }
  * ```
  *
@@ -181,6 +182,25 @@
  * of a node are defined does matter, though, as it's used for the order in
  * which the values can be passed to the node constructor; they are ordered
  * subclass to superclass, top to bottom.
+ *
+ * The order of the primitives and child notes (a.k.a. fields) is used in a few
+ * places, primarily the constructor and for debug dump output generation. The
+ * order is as specified within each class hierarchy level, but the fields of
+ * the more-specialized classes come before the fields of their ancestors.
+ *
+ * When additions are made to a tree, it may be required to maintain
+ * compatibility with older tree versions by maintaining field order. In order
+ * to support this, the above field order can be overridden using a `reorder`
+ * directive. This directive has the following syntax:
+ *
+ * ```
+ * # [optional documentation (ignored)]
+ * reorder(a, b, c);
+ * ```
+ *
+ * where `a, b, c` is the desired order of the fields. Any fields not explicitly
+ * specified in the list will automatically appear at the end, using the default
+ * order.
  *
  * \section directive Directives
  *
@@ -596,6 +616,7 @@
 #include <algorithm>
 #include <iterator>
 #include <vector>
+#include <list>
 #include <map>
 #include <memory>
 #include <cctype>
@@ -739,6 +760,11 @@ struct Node {
     std::vector<Field> fields;
 
     /**
+     * Optional override for field order as returned by all_fields().
+     */
+    std::list<std::string> order;
+
+    /**
      * Whether this node represents a recovered parse error.
      */
     bool is_error_marker;
@@ -746,7 +772,7 @@ struct Node {
     /**
      * Gathers all child nodes, including those in parent classes.
      */
-    std::vector<Field> all_fields();
+    std::vector<Field> all_fields() const;
 
 };
 
@@ -801,6 +827,12 @@ public:
         const std::string &doc = "",
         EdgeType type = Prim
     );
+
+    /**
+     * Sets the order in which the parameters must appear in the dumps and
+     * constructor.
+     */
+    NodeBuilder *with_order(std::list<std::string> &&order);
 
     /**
      * Indicate that this node marks a recovered parse error.

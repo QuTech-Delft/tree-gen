@@ -77,6 +77,9 @@ Many                                                WITHOUT_STR(MANY);
 OptLink                                             WITHOUT_STR(OLINK);
 Link                                                WITHOUT_STR(LINK);
 
+    /* Parameter reordering for compatibility when hierarchy changes */
+reorder                                             WITHOUT_STR(REORDER);
+
     /* External node (typedef'd multiplicity thing from another tree) */
 external                                            WITHOUT_STR(EXT);
 
@@ -84,7 +87,7 @@ external                                            WITHOUT_STR(EXT);
 [_a-zA-Z][_a-zA-Z0-9]*                              WITH_STR(IDENT);
 
     /* Interpunction */
-[{}<>:;]                                            OPERATOR;
+[(){}<>:;,]                                         OPERATOR;
 
     /* Unknown character in input */
 .                                                   WITHOUT_STR(BAD_CHARACTER);

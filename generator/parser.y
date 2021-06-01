@@ -53,13 +53,15 @@
 
 /* YYSTYPE union */
 %union {
-    char                    *str;
-    std::string             *xstr;
-    tree_gen::NodeBuilder   *nbld;
+    char                        *str;
+    std::string                 *xstr;
+    std::list<std::string>      *xsl;
+    tree_gen::NodeBuilder       *nbld;
 };
 
 /* Typenames for nonterminals */
 %type <xstr> Documentation Identifier
+%type <xsl>  Identifiers
 %type <nbld> Node
 
 /* Tokens */
@@ -69,8 +71,9 @@
 %token NAMESPACE NAMESPACE_SEP
 %token ERROR
 %token MAYBE ONE ANY MANY OLINK LINK EXT
+%token REORDER
 %token <str> IDENT
-%token '{' '}' '<' '>' ':' ';'
+%token '{' '}' '(' ')' '<' '>' ':' ';'
 %token BAD_CHARACTER
 
 /* Misc. Yacc directives */
@@ -85,6 +88,10 @@ Documentation   :                                                               
 
 Identifier      : IDENT                                                         { TRY $$ = new std::string($1); std::free($1); CATCH }
                 | Identifier NAMESPACE_SEP IDENT                                { TRY $$ = $1; *$$ += "::"; *$$ += $3; std::free($3); CATCH }
+                ;
+
+Identifiers     : Identifier                                                    { TRY $$ = new std::list<std::string>(); $$->emplace_back(std::move(*$1)); delete $1; CATCH }
+                | Identifiers ',' Identifier                                    { TRY $$ = $1; $$->emplace_back(std::move(*$3)); delete $3; CATCH }
                 ;
 
 Node            : Documentation IDENT '{'                                       { TRY auto nb = std::make_shared<tree_gen::NodeBuilder>(std::string($2), *$1); specification.add_node(nb); $$ = nb.get(); delete $1; std::free($2); CATCH }
@@ -102,6 +109,7 @@ Node            : Documentation IDENT '{'                                       
                 | Node Documentation IDENT ':' EXT OLINK '<' Identifier '>' ';' { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::OptLink); delete $2; std::free($3); delete $8; CATCH }
                 | Node Documentation IDENT ':' EXT LINK '<' Identifier '>' ';'  { TRY $$ = $1->with_prim(*$8, std::string($3), *$2, tree_gen::Link); delete $2; std::free($3); delete $8; CATCH }
                 | Node Documentation IDENT ':' Identifier ';'                   { TRY $$ = $1->with_prim(*$5, std::string($3), *$2, tree_gen::Prim); delete $2; std::free($3); delete $5; CATCH }
+                | Node Documentation REORDER '(' Identifiers ')' ';'            { TRY $$ = $1->with_order(std::move(*$5)); delete $2; delete $5; CATCH }
                 | Node Node '}'                                                 { TRY $2->derive_from($1->node); CATCH }
                 ;
 

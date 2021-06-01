@@ -13,13 +13,32 @@ namespace tree_gen {
 /**
  * Gathers all child nodes, including those in parent classes.
  */
-std::vector<Field> Node::all_fields() {
+std::vector<Field> Node::all_fields() const {
     std::vector<Field> children = this->fields;
     if (parent) {
         auto from_parent = parent->all_fields();
         children.insert(children.end(), from_parent.begin(), from_parent.end());
     }
-    return children;
+    if (order.empty()) {
+        return children;
+    }
+    std::vector<Field> reordered;
+    for (const auto &name : order) {
+        bool done = false;
+        for (auto it = children.begin(); it != children.end(); ++it) {
+            if (it->name == name) {
+                reordered.push_back(*it);
+                children.erase(it);
+                done = true;
+                break;
+            }
+        }
+        if (!done) {
+            throw std::runtime_error("Unknown field in field order: " + name);
+        }
+    }
+    reordered.insert(reordered.end(), children.begin(), children.end());
+    return reordered;
 }
 
 /**
@@ -117,6 +136,15 @@ NodeBuilder *NodeBuilder::with_prim(
     child.doc = doc;
     child.ext_type = type;
     node->fields.push_back(std::move(child));
+    return this;
+}
+
+/**
+ * Sets the order in which the parameters must appear in the dumps and
+ * constructor.
+ */
+NodeBuilder *NodeBuilder::with_order(std::list<std::string> &&order) {
+    node->order = std::move(order);
     return this;
 }
 
