@@ -282,6 +282,7 @@ public:
     template <class S>
     Maybe &operator=(const std::shared_ptr<S> &value) {
         set<S>(value);
+        return *this;
     }
 
     /**
@@ -298,6 +299,7 @@ public:
     template <class S>
     Maybe &operator=(std::shared_ptr<S> &&value) {
         set<S>(std::move(value));
+        return *this;
     }
 
     /**
@@ -314,6 +316,7 @@ public:
     template <class S>
     Maybe &operator=(const Maybe<S> &value) {
         set<S>(std::move(value));
+        return *this;
     }
 
     /**
@@ -330,6 +333,7 @@ public:
     template <class S>
     Maybe &operator=(Maybe<S> &&value) {
         set<S>(std::move(value));
+        return *this;
     }
 
     /**
