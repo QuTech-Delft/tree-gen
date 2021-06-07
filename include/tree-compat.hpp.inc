@@ -2,11 +2,11 @@
  * Generalized contents of tree-compat.hpp.
  */
 
-#include <sys/types.h>
-
 #ifndef _WIN32
-TREE_NAMESPACE_BEGIN
+#include <sys/types.h>
 #endif
+
+TREE_NAMESPACE_BEGIN
 
 /**
  * ssize_t is not defined on Windows, so we replace it with a long long.

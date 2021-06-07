@@ -23,6 +23,11 @@
 #define TREE_MAP(K, V)              std::map<K, V>
 #endif
 
+#ifndef TREE_MAP_SET
+/// Map operation for setting a value that may or may not exist yet.
+#define TREE_MAP_SET(m, k, v)       (m)[k] = (v)
+#endif
+
 #ifndef TREE_RUNTIME_ERROR
 /// The type used for generic exceptions.
 #define TREE_RUNTIME_ERROR          std::runtime_error

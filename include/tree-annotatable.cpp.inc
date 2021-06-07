@@ -133,7 +133,7 @@ void Annotatable::deserialize_annotations(const cbor::MapReader &map) {
             std::shared_ptr<Anything> value{};
             value = serdes_registry.deserialize(it.first, it.second);
             if (value) {
-                annotations[value->get_type_index()] = value;
+                TREE_MAP_SET(annotations, value->get_type_index(), value);
             }
         }
     }

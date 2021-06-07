@@ -61,7 +61,7 @@ void IdentifierMap::restore_links() const {
  * in the tree (except through links). If there are duplicates, a
  * NotWellFormed exception is thrown.
  */
-void Completable::find_reachable(::tree::base::PointerMap &map) const {
+void Completable::find_reachable(PointerMap &map) const {
     (void)map;
 }
 
@@ -75,7 +75,7 @@ void Completable::find_reachable(::tree::base::PointerMap &map) const {
  *    with the PointerMap.
  * If not complete, a NotWellFormed exception is thrown.
  */
-void Completable::check_complete(const ::tree::base::PointerMap &map) const {
+void Completable::check_complete(const PointerMap &map) const {
     (void)map;
 }
 

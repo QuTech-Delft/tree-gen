@@ -2,8 +2,6 @@
  * Generalized contents of tree-base.hpp.
  */
 
-#pragma once
-
 #include <memory>
 #include <vector>
 #include <typeinfo>

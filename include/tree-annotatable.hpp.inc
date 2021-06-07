@@ -311,7 +311,7 @@ public:
      */
     template <typename T>
     void set_annotation(const T &ob) {
-        annotations[std::type_index(typeid(T))] = std::make_shared<Anything>(Anything::make<T>(ob));
+        TREE_MAP_SET(annotations, std::type_index(typeid(T)), std::make_shared<Anything>(Anything::make<T>(ob)));
     }
 
     /**
@@ -325,7 +325,7 @@ public:
      */
     template <typename T>
     void set_annotation(T &&ob) {
-        annotations[std::type_index(typeid(T))] = std::make_shared<Anything>(Anything::make<T>(std::move(ob)));
+        TREE_MAP_SET(annotations, std::type_index(typeid(T)), std::make_shared<Anything>(Anything::make<T>(std::move(ob))));
     }
 
     /**
@@ -343,9 +343,10 @@ public:
      */
     template <typename T>
     T *get_annotation_ptr() {
-        try {
-            return annotations.at(std::type_index(typeid(T)))->get_mut<T>();
-        } catch (const std::out_of_range&) {
+        auto it = annotations.find(std::type_index(typeid(T)));
+        if (it != annotations.end()) {
+            return it->second->get_mut<T>();
+        } else {
             return nullptr;
         }
     }
@@ -356,9 +357,10 @@ public:
      */
     template <typename T>
     const T *get_annotation_ptr() const {
-        try {
-            return annotations.at(std::type_index(typeid(T)))->get_const<T>();
-        } catch (const std::out_of_range&) {
+        auto it = annotations.find(std::type_index(typeid(T)));
+        if (it != annotations.end()) {
+            return it->second->get_const<T>();
+        } else {
             return nullptr;
         }
     }
