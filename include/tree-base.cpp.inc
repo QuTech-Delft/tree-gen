@@ -1,6 +1,4 @@
-#include "tree-base.hpp"
-
-namespace tree {
+TREE_NAMESPACE_BEGIN
 namespace base {
 
 /**
@@ -115,5 +113,5 @@ bool Completable::is_well_formed() const {
     }
 }
 
-}
-}
+} // namespace base
+TREE_NAMESPACE_END

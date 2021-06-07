@@ -1,10 +1,9 @@
-#include "tree-cbor.hpp"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <cstring>
 
-namespace tree {
+TREE_NAMESPACE_BEGIN
 namespace cbor {
 
 /**
@@ -23,7 +22,7 @@ Reader::Reader(std::string &&data) :
     slice_length(this->data->size())
 {
     if (!slice_length) {
-        throw std::runtime_error("invalid CBOR: zero-size object");
+        throw TREE_RUNTIME_ERROR("invalid CBOR: zero-size object");
     }
     check();
 }
@@ -37,10 +36,10 @@ Reader::Reader(const Reader &parent, size_t offs, size_t len) :
     slice_length(len)
 {
     if (slice_offset + slice_length > parent.slice_offset + parent.slice_length) {
-        throw std::runtime_error("invalid CBOR: trying to slice past extents of current slice");
+        throw TREE_RUNTIME_ERROR("invalid CBOR: trying to slice past extents of current slice");
     }
     if (this->slice_length == 0) {
-        throw std::runtime_error("invalid CBOR: trying to make an empty slice");
+        throw TREE_RUNTIME_ERROR("invalid CBOR: trying to make an empty slice");
     }
 
     // Seek past semantic tags.
@@ -52,7 +51,7 @@ Reader::Reader(const Reader &parent, size_t offs, size_t len) :
         slice_offset += tag_len;
         slice_length -= tag_len;
         if (this->slice_length == 0) {
-            throw std::runtime_error("invalid CBOR: semantic tag has no value");
+            throw TREE_RUNTIME_ERROR("invalid CBOR: semantic tag has no value");
         }
     }
 }
@@ -69,7 +68,7 @@ Reader Reader::slice(size_t offset, size_t length) const {
  */
 uint8_t Reader::read_at(size_t offset) const {
     if (offset >= slice_length) {
-        throw std::runtime_error("invalid CBOR: trying to read past extents of current slice");
+        throw TREE_RUNTIME_ERROR("invalid CBOR: trying to read past extents of current slice");
     }
     return data->at(this->slice_offset + offset);
 }
@@ -102,7 +101,7 @@ uint64_t Reader::read_intlike(uint8_t info, size_t &offset) const {
 
     // Info greater than or equal to 28 is illegal. Note that 31 is used for
     // indefinite lengths, so this must be checked prior to calling this method.
-    throw std::runtime_error("invalid CBOR: illegal additional info for integer or object length");
+    throw TREE_RUNTIME_ERROR("invalid CBOR: illegal additional info for integer or object length");
 
 }
 
@@ -129,7 +128,7 @@ void Reader::read_stringlike(size_t &offset, std::ostream &s) const {
         // Handle definite-length strings.
         uint64_t length = read_intlike(info, offset);
         if (length + offset > this->slice_length) {
-            throw std::runtime_error("Invalid CBOR: string read past end of slice");
+            throw TREE_RUNTIME_ERROR("Invalid CBOR: string read past end of slice");
         }
         s.write(data->data() + this->slice_offset + offset, length);
         offset += length;
@@ -168,7 +167,7 @@ void Reader::check_and_seek(size_t &offset) const {
                     uint8_t sub_type = sub_initial >> 5u;
                     uint8_t sub_info = sub_initial & 0x1Fu;
                     if (sub_type != type) {
-                        throw std::runtime_error("invalid CBOR: illegal indefinite-length string component");
+                        throw TREE_RUNTIME_ERROR("invalid CBOR: illegal indefinite-length string component");
                     }
 
                     // Seek past definite-length string component. The size in
@@ -234,37 +233,37 @@ void Reader::check_and_seek(size_t &offset) const {
             return;
 
         case 23: // undefined
-            throw std::runtime_error("invalid CBOR: undefined value is not supported");
+            throw TREE_RUNTIME_ERROR("invalid CBOR: undefined value is not supported");
 
         case 25: // half-precision float
-            throw std::runtime_error("invalid CBOR: half-precision float is not supported");
+            throw TREE_RUNTIME_ERROR("invalid CBOR: half-precision float is not supported");
 
         case 26: // single-precision float
-            throw std::runtime_error("invalid CBOR: single-precision float is not supported");
+            throw TREE_RUNTIME_ERROR("invalid CBOR: single-precision float is not supported");
 
         case 27: // double-precision float
             offset += 8;
             return;
 
         case 31: // break
-            throw std::runtime_error("invalid CBOR: unexpected break");
+            throw TREE_RUNTIME_ERROR("invalid CBOR: unexpected break");
 
         default:
             break;
     }
 
-    throw std::runtime_error("invalid CBOR: unknown type code");
+    throw TREE_RUNTIME_ERROR("invalid CBOR: unknown type code");
 }
 
 /**
  * Tests whether the structure is valid CBOR for as far as we know about
- * it. Throws a std::runtime_error with an appropriate message if not.
+ * it. Throws a TREE_RUNTIME_ERROR with an appropriate message if not.
  */
 void Reader::check() const {
     size_t offset = 0u;
     check_and_seek(offset);
     if (offset != this->slice_length) {
-        throw std::runtime_error("invalid CBOR: garbage at end of outer object or multiple objects");
+        throw TREE_RUNTIME_ERROR("invalid CBOR: garbage at end of outer object or multiple objects");
     }
 }
 
@@ -311,12 +310,12 @@ bool Reader::is_null() const {
 }
 
 /**
- * Throws an unexpected value type error through a std::runtime_error if
+ * Throws an unexpected value type error through a TREE_RUNTIME_ERROR if
  * the object represented by this slice is not null.
  */
 void Reader::as_null() const {
     if (!is_null()) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected null but found "
             + std::string(get_type_name()));
     }
@@ -331,14 +330,14 @@ bool Reader::is_bool() const {
 
 /**
  * Returns the boolean representation of this slice. If it's not a boolean,
- * an unexpected value type error is thrown through a std::runtime_error.
+ * an unexpected value type error is thrown through a TREE_RUNTIME_ERROR.
  */
 bool Reader::as_bool() const {
     switch (read_at(0)) {
         case 0xF4: return false;
         case 0xF5: return true;
     }
-    throw std::runtime_error(
+    throw TREE_RUNTIME_ERROR(
         "unexpected CBOR structure: expected boolean but found "
         + std::string(get_type_name()));
 }
@@ -353,13 +352,13 @@ bool Reader::is_int() const {
 /**
  * Returns the integer representation of this slice. If it's not an
  * integer, an unexpected value type error is thrown through a
- * std::runtime_error.
+ * TREE_RUNTIME_ERROR.
  */
 int64_t Reader::as_int() const {
     uint8_t initial = read_at(0);
     uint8_t type = initial >> 5u;
     if (type >= 2) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected integer but found "
             + std::string(get_type_name()));
     }
@@ -367,7 +366,7 @@ int64_t Reader::as_int() const {
     size_t offset = 1;
     uint64_t value = read_intlike(info, offset);
     if (value >= 0x8000000000000000ull) {
-        throw std::runtime_error("CBOR integer out of int64 range");
+        throw TREE_RUNTIME_ERROR("CBOR integer out of int64 range");
     }
     if (type == 0) {
         return (int64_t)value;
@@ -387,11 +386,11 @@ bool Reader::is_float() const {
 /**
  * Returns the floating point representation of this slice. If it's not a
  * float, an unexpected value type error is thrown through a
- * std::runtime_error. Only double precision is supported.
+ * TREE_RUNTIME_ERROR. Only double precision is supported.
  */
 double Reader::as_float() const {
     if (!is_float()) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected float but found "
             + std::string(get_type_name()));
     }
@@ -412,11 +411,11 @@ bool Reader::is_string() const {
 /**
  * Returns the string representation of this slice. If it's not a Unicode
  * string, an unexpected value type error is thrown through a
- * std::runtime_error.
+ * TREE_RUNTIME_ERROR.
  */
 std::string Reader::as_string() const {
     if (!is_string()) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected UTF8 string but found "
             + std::string(get_type_name()));
     }
@@ -436,11 +435,11 @@ bool Reader::is_binary() const {
 /**
  * Returns the string representation of this slice. If it's not a binary
  * string, an unexpected value type error is thrown through a
- * std::runtime_error.
+ * TREE_RUNTIME_ERROR.
  */
 std::string Reader::as_binary() const {
     if (!is_binary()) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected binary string but found "
             + std::string(get_type_name()));
     }
@@ -469,11 +468,11 @@ void Reader::read_array_item(size_t &offset, ArrayReader &ar) const {
 
 /**
  * Returns the array representation of this slice. If it's not an array,
- * an unexpected value type error is thrown through a std::runtime_error.
+ * an unexpected value type error is thrown through a TREE_RUNTIME_ERROR.
  */
 ArrayReader Reader::as_array() const {
     if (!is_array()) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected array but found "
             + std::string(get_type_name()));
     }
@@ -525,11 +524,11 @@ void Reader::read_map_item(size_t &offset, MapReader &map) const {
 
 /**
  * Returns the map/object representation of this slice. If it's not a map,
- * an unexpected value type error is thrown through a std::runtime_error.
+ * an unexpected value type error is thrown through a TREE_RUNTIME_ERROR.
  */
 MapReader Reader::as_map() const {
     if (!is_map()) {
-        throw std::runtime_error(
+        throw TREE_RUNTIME_ERROR(
             "unexpected CBOR structure: expected map but found "
             + std::string(get_type_name()));
     }
@@ -582,7 +581,7 @@ StructureWriter::StructureWriter(Writer &writer) :
  */
 std::ostream &StructureWriter::stream() {
     if (!writer || writer->stack.empty() || writer->stack.top() != id) {
-        throw std::runtime_error("Attempt to write to CBOR object using inactive writer");
+        throw TREE_RUNTIME_ERROR("Attempt to write to CBOR object using inactive writer");
     }
     return writer->stream;
 }
@@ -908,10 +907,10 @@ Writer::Writer(std::ostream &stream) : stream(stream), id_counter(1) {
  */
 MapWriter Writer::start() {
     if (!stack.empty()) {
-        throw std::runtime_error("Writing of this CBOR object has already started");
+        throw TREE_RUNTIME_ERROR("Writing of this CBOR object has already started");
     }
     return MapWriter(*this);
 }
 
-}
-}
+} // namespace cbor
+TREE_NAMESPACE_END

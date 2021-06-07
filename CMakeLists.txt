@@ -87,12 +87,11 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 # Create the library.
 set(
     TREE_LIB_SRCS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-annotatable.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-base.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-cbor.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp"
 )
 set(TREE_LIB_SRCS ${TREE_LIB_SRCS} PARENT_SCOPE)
 add_library(tree-lib-obj OBJECT ${TREE_LIB_SRCS})
+set_property(TARGET tree-lib-obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # tree-lib has a global, which (thanks to MSVC declspec nonsense) requires a
 # header file to be different when the library is compiled compared to when it

@@ -83,9 +83,12 @@
  * The namespace for the Base and edge classes can be set using the
  * `tree_namespace` directive in case you want to override them or add
  * functionality. Note that you can use "using One = tree::base::One;" etc. if
- * you only want to override part of the classes. If the tree_namespace
- * directive is not specified, the namespace that the node classes are generated
- * into will be used by default.
+ * you only want to override part of the classes. You can also opt to use the
+ * `tree-all.[ch]pp.inc` files, which define the same structures that exist
+ * in the `tree` namespace, but allows you to override some of the standard
+ * library types they are based on, for example to use a different base
+ * exception type. If the tree_namespace directive is not specified, the
+ * namespace that the node classes are generated into will be used by default.
  *
  * Finally, primitives are used to store the actual data, forming the leaves of
  * the tree. They can generally be any externally-defined C++ type, although a

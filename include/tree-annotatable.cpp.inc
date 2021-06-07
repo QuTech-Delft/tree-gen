@@ -1,7 +1,6 @@
-#include "tree-annotatable.hpp"
 #include <unordered_map>
 
-namespace tree {
+TREE_NAMESPACE_BEGIN
 namespace annotatable {
 
 /**
@@ -140,5 +139,5 @@ void Annotatable::deserialize_annotations(const cbor::MapReader &map) {
     }
 }
 
-}
-}
+} // namespace annotatable
+TREE_NAMESPACE_END

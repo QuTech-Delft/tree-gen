@@ -4,15 +4,6 @@
 
 #pragma once
 
-namespace tree {
-
-/**
- * ssize_t is not defined on Windows, so we replace it with a long long.
- */
-#ifdef _WIN32
-typedef long long signed_size_t;
-#else
-typedef ssize_t signed_size_t;
-#endif
-
-} // namespace tree
+#include "tree-default-config.hpp.inc"
+#include "tree-compat.hpp.inc"
+#include "tree-undef.hpp.inc"
