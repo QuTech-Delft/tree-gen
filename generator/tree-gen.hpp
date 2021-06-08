@@ -903,6 +903,11 @@ public:
     std::string tree_namespace;
 
     /**
+     * The namespace to take support stuff like tree::cbor from.
+     */
+    std::string support_namespace;
+
+    /**
      * The initialization function to use for default values of members.
      */
     std::string initialize_function;
@@ -961,6 +966,11 @@ public:
      * Sets the tree namespace.
      */
     void set_tree_namespace(const std::string &name_space);
+
+    /**
+     * Sets the support namespace.
+     */
+    void set_support_namespace(const std::string &name_space);
 
     /**
      * Sets the initialization function.

@@ -137,7 +137,8 @@ void generate_base_class(
     std::ofstream &header,
     std::ofstream &source,
     Nodes &nodes,
-    bool with_serdes
+    bool with_serdes,
+    const std::string &support_ns
 ) {
 
     format_doc(header, "Main class for all nodes.");
@@ -197,19 +198,19 @@ void generate_base_class(
     if (with_serdes) {
         format_doc(header, "Serializes this node to the given map.", "    ");
         header << "    virtual void serialize(" << std::endl;
-        header << "        ::tree::cbor::MapWriter &map," << std::endl;
-        header << "        const ::tree::base::PointerMap &ids" << std::endl;
+        header << "        " << support_ns << "::cbor::MapWriter &map," << std::endl;
+        header << "        const " << support_ns << "::base::PointerMap &ids" << std::endl;
         header << "    ) const = 0;" << std::endl << std::endl;
 
         format_doc(header, "Deserializes the given node.", "    ");
         header << "    static std::shared_ptr<Node> deserialize(" << std::endl;
-        header << "         const ::tree::cbor::MapReader &map," << std::endl;
-        header << "         ::tree::base::IdentifierMap &ids" << std::endl;
+        header << "         const " << support_ns << "::cbor::MapReader &map," << std::endl;
+        header << "         " << support_ns << "::base::IdentifierMap &ids" << std::endl;
         header << "    );" << std::endl << std::endl;
         format_doc(source, "Writes a debug dump of this node to the given stream.");
         source << "std::shared_ptr<Node> Node::deserialize(" << std::endl;
-        source << "    const ::tree::cbor::MapReader &map," << std::endl;
-        source << "    ::tree::base::IdentifierMap &ids" << std::endl;
+        source << "    const " << support_ns << "::cbor::MapReader &map," << std::endl;
+        source << "    " << support_ns << "::base::IdentifierMap &ids" << std::endl;
         source << ") {" << std::endl;
         source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
         for (auto &node : nodes) {
@@ -254,6 +255,7 @@ void generate_node_class(
     Node &node
 ) {
     const auto all_fields = node.all_fields();
+    const auto &support_ns = spec.support_namespace;
 
     // Print class header.
     if (!node.doc.empty()) {
@@ -372,10 +374,10 @@ void generate_node_class(
     if (node.derived.empty()) {
         std::string doc = "Registers all reachable nodes with the given PointerMap.";
         format_doc(header, doc, "    ");
-        header << "    void find_reachable(::tree::base::PointerMap &map) const override;" << std::endl << std::endl;
+        header << "    void find_reachable(" << support_ns << "::base::PointerMap &map) const override;" << std::endl << std::endl;
         format_doc(source, doc);
         source << "void " << node.title_case_name;
-        source << "::find_reachable(::tree::base::PointerMap &map) const {" << std::endl;
+        source << "::find_reachable(" << support_ns << "::base::PointerMap &map) const {" << std::endl;
         source << "    (void)map;" << std::endl;
         for (auto &field : all_fields) {
             auto type = (field.type == Prim) ? field.ext_type : field.type;
@@ -396,13 +398,13 @@ void generate_node_class(
 
         doc = "Returns whether this `" + node.title_case_name + "` is complete/fully defined.";
         format_doc(header, doc, "    ");
-        header << "    void check_complete(const ::tree::base::PointerMap &map) const override;" << std::endl << std::endl;
+        header << "    void check_complete(const " << support_ns << "::base::PointerMap &map) const override;" << std::endl << std::endl;
         format_doc(source, doc);
         source << "void " << node.title_case_name;
-        source << "::check_complete(const ::tree::base::PointerMap &map) const {" << std::endl;
+        source << "::check_complete(const " << support_ns << "::base::PointerMap &map) const {" << std::endl;
         source << "    (void)map;" << std::endl;
         if (node.is_error_marker) {
-            source << "    throw ::tree::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
+            source << "    throw " << support_ns << "::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
         } else {
             for (auto &field : all_fields) {
                 auto type = (field.type == Prim) ? field.ext_type : field.type;
@@ -516,13 +518,13 @@ void generate_node_class(
         if (node.derived.empty()) {
             format_doc(header, "Serializes this node to the given map.", "    ");
             header << "    void serialize(" << std::endl;
-            header << "        ::tree::cbor::MapWriter &map," << std::endl;
-            header << "        const ::tree::base::PointerMap &ids" << std::endl;
+            header << "        " << support_ns << "::cbor::MapWriter &map," << std::endl;
+            header << "        const " << support_ns << "::base::PointerMap &ids" << std::endl;
             header << "    ) const override;" << std::endl << std::endl;
             format_doc(source, "Serializes this node to the given map.");
             source << "void " << node.title_case_name << "::serialize(" << std::endl;
-            source << "    ::tree::cbor::MapWriter &map," << std::endl;
-            source << "    const ::tree::base::PointerMap &ids" << std::endl;
+            source << "    " << support_ns << "::cbor::MapWriter &map," << std::endl;
+            source << "    const " << support_ns << "::base::PointerMap &ids" << std::endl;
             source << ") const {" << std::endl;
             source << "    (void)ids;" << std::endl;
             source << "    map.append_string(\"@t\", \"" << node.title_case_name << "\");" << std::endl;
@@ -547,10 +549,10 @@ void generate_node_class(
 
             format_doc(header, "Deserializes the given node.", "    ");
             header << "    static std::shared_ptr<" << node.title_case_name << "> ";
-            header << "deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids);" << std::endl << std::endl;
+            header << "deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids);" << std::endl << std::endl;
             format_doc(source, "Writes a debug dump of this node to the given stream.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
-            source << node.title_case_name << "::deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids) {" << std::endl;
+            source << node.title_case_name << "::deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids) {" << std::endl;
             source << "    (void)ids;" << std::endl;
             source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
             source << "    if (type != \"" << node.title_case_name << "\") {" << std::endl;
@@ -611,10 +613,10 @@ void generate_node_class(
         } else {
             format_doc(header, "Deserializes the given node.", "    ");
             header << "    static std::shared_ptr<" << node.title_case_name << "> ";
-            header << "deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids);" << std::endl << std::endl;
+            header << "deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids);" << std::endl << std::endl;
             format_doc(source, "Writes a debug dump of this node to the given stream.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
-            source << node.title_case_name << "::deserialize(const ::tree::cbor::MapReader &map, ::tree::base::IdentifierMap &ids) {" << std::endl;
+            source << node.title_case_name << "::deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids) {" << std::endl;
             source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
             for (auto &derived : node.derived) {
                 generate_deserialize_mux(source, *(derived.lock()));
@@ -1139,9 +1141,8 @@ void generate(
 
     // Determine the namespace that the base and edge classes are defined in.
     // If it's not the current namespace, pull the types into it using typedefs.
-    std::string tree_namespace = "";
     if (!specification.tree_namespace.empty()) {
-        tree_namespace = specification.tree_namespace + "::";
+        auto tree_namespace = specification.tree_namespace + "::";
         header << "// Base classes used to construct the tree." << std::endl;
         header << "using Base = " << tree_namespace << "Base;" << std::endl;
         header << "template <class T> using Maybe   = " << tree_namespace << "Maybe<T>;" << std::endl;
@@ -1185,7 +1186,13 @@ void generate(
     generate_enum(header, nodes);
 
     // Generate the base class.
-    generate_base_class(header, source, nodes, !specification.serialize_fn.empty());
+    generate_base_class(
+        header,
+        source,
+        nodes,
+        !specification.serialize_fn.empty(),
+        specification.support_namespace
+    );
 
     // Generate the node classes.
     std::unordered_set<std::string> generated;

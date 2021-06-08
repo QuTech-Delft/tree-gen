@@ -188,6 +188,16 @@ void Specification::set_tree_namespace(const std::string &name_space) {
 }
 
 /**
+ * Sets the support namespace.
+ */
+void Specification::set_support_namespace(const std::string &name_space) {
+    if (!support_namespace.empty()) {
+        throw std::runtime_error("duplicate tree namespace declaration");
+    }
+    support_namespace = name_space;
+}
+
+/**
  * Sets the initialization function.
  */
 void Specification::set_initialize_function(const std::string &init_fn) {
@@ -268,6 +278,9 @@ void Specification::add_node(std::shared_ptr<NodeBuilder> &node_builder) {
 void Specification::build() {
     if (initialize_function.empty()) {
         throw std::runtime_error("initialization function not specified");
+    }
+    if (support_namespace.empty()) {
+        support_namespace = "::tree";
     }
     for (auto &it : builders) {
         for (auto &child : it.second->node->fields) {

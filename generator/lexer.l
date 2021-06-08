@@ -54,6 +54,7 @@ source                                              WITHOUT_STR(SOURCE);
 header                                              WITHOUT_STR(HEADER);
 python                                              WITHOUT_STR(PYTHON);
 tree_namespace                                      WITHOUT_STR(TREE_NS);
+support_namespace                                   WITHOUT_STR(SUPPORT_NS);
 initialize_function                                 WITHOUT_STR(INIT_FN);
 serdes_functions                                    WITHOUT_STR(SERDES_FNS);
 location                                            WITHOUT_STR(SOURCE_LOC);
