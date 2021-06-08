@@ -438,9 +438,9 @@ public:
     }
 
     /**
-     * Equality operator.
+     * Value-based equality operator.
      */
-    bool operator==(const Maybe &rhs) const {
+    bool equals(const Maybe &rhs) const {
         if (val && rhs.get_ptr()) {
             if (val == rhs.val) {
                 return true;
@@ -453,10 +453,17 @@ public:
     }
 
     /**
-     * Inequality operator.
+     * Pointer-based equality operator.
      */
-    inline bool operator!=(const Maybe &rhs) const {
-        return !(*this == rhs);
+    bool operator==(const Maybe &rhs) const {
+        return val == rhs.get_ptr();
+    }
+
+    /**
+     * Pointer-based inequality operator.
+     */
+    bool operator!=(const Maybe &rhs) const {
+        return val != rhs.get_ptr();
     }
 
     /**

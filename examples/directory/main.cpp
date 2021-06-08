@@ -258,7 +258,7 @@ int main() {
     // Note that equality for two link edges is satisfied only if they point to
     // the exact same node. That's not the case for the links in our two
     // entirely separate trees, so the two trees register as unequal.
-    ASSERT(system2 != system);
+    ASSERT(!system2.equals(system));
     MARKER
 
     // To be sure no data was lost, we'll have to check the CBOR and debug dumps

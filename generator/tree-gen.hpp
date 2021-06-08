@@ -284,8 +284,8 @@
  *
  *  - `One<Node> clone() const`: returns a deep copy of this node.
  *
- *  - An equality and inequality operator. Note that this ignores equality of
- *    any annotations.
+ *  - A value-based equality operator. Note that this ignores equality of any
+ *    annotations.
  *
  *  - `void visit(Visitor &visitor)` (C++ only): implements the visitor pattern
  *    using the also-generated abstract Visitor/RecursiveVisitor classes. See
