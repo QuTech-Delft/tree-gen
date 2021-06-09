@@ -797,25 +797,16 @@ void generate_recursive_visitor_class(
     // Print class header.
     format_doc(
         header,
-        "Visitor base class defaulting to DFS traversal.\n\n"
+        "Visitor base class defaulting to DFS pre-order traversal.\n\n"
         "The visitor functions for nodes with subnode fields default to DFS "
-        "traversal instead of falling back to more generic node types.");
+        "traversal in addition to falling back to more generic node types."
+        "Links and OptLinks are *not* followed."
+    );
     header << "class RecursiveVisitor : public Visitor<void> {" << std::endl;
     header << "public:" << std::endl << std::endl;
 
     // Functions for all node types.
     for (auto &node : nodes) {
-        auto all_fields = node->all_fields();
-        bool empty = true;
-        for (auto &field : all_fields) {
-            if (field.node_type) {
-                empty = false;
-                break;
-            }
-        }
-        if (empty) {
-            continue;
-        }
         auto doc = "Recursive traversal for `" + node->title_case_name + "` nodes.";
         format_doc(header, doc, "    ");
         header << "    void visit_" << node->snake_case_name;
@@ -823,9 +814,16 @@ void generate_recursive_visitor_class(
         format_doc(source, doc);
         source << "void RecursiveVisitor::visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node) {" << std::endl;
-        for (auto &field : all_fields) {
+        if (node->parent) {
+            source << "    visit_" << node->parent->snake_case_name << "(node);" << std::endl;
+        } else {
+            source << "    visit_node(node);" << std::endl;
+        }
+        for (auto &field : node->fields) {
             if (field.node_type) {
-                source << "    node." << field.name << ".visit(*this);" << std::endl;
+                if (field.type != Link && field.type != OptLink) {
+                    source << "    node." << field.name << ".visit(*this);" << std::endl;
+                }
             }
         }
         source << "}" << std::endl << std::endl;
