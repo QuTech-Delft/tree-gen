@@ -60,7 +60,7 @@
 };
 
 /* Typenames for nonterminals */
-%type <xstr> Documentation Identifier
+%type <xstr> Documentation Identifier String
 %type <xsl>  Identifiers
 %type <nbld> Node
 
@@ -72,7 +72,7 @@
 %token ERROR
 %token MAYBE ONE ANY MANY OLINK LINK EXT
 %token REORDER
-%token <str> IDENT
+%token <str> IDENT STRING
 %token '{' '}' '(' ')' '<' '>' ':' ';'
 %token BAD_CHARACTER
 
@@ -88,6 +88,9 @@ Documentation   :                                                               
 
 Identifier      : IDENT                                                         { TRY $$ = new std::string($1); std::free($1); CATCH }
                 | Identifier NAMESPACE_SEP IDENT                                { TRY $$ = $1; *$$ += "::"; *$$ += $3; std::free($3); CATCH }
+                ;
+
+String          : STRING                                                        { TRY $1[std::strlen($1) - 1] = 0; $$ = new std::string($1 + 1); std::free($1); CATCH }
                 ;
 
 Identifiers     : Identifier                                                    { TRY $$ = new std::list<std::string>(); $$->emplace_back(std::move(*$1)); delete $1; CATCH }
@@ -116,6 +119,7 @@ Node            : Documentation IDENT '{'                                       
 Root            :                                                               {}
                 | Root Documentation SOURCE                                     { TRY specification.set_source_doc(*$2); delete $2; CATCH }
                 | Root Documentation HEADER                                     { TRY specification.set_header_doc(*$2); delete $2; CATCH }
+                | Root Documentation HEADER String                              { TRY specification.set_header_doc(*$2); delete $2; specification.set_header_fname(*$4); delete $4; CATCH }
                 | Root Documentation PYTHON                                     { TRY specification.set_python_doc(*$2); delete $2; CATCH }
                 | Root TREE_NS Identifier                                       { TRY specification.set_tree_namespace(*$3); delete $3; CATCH }
                 | Root SUPPORT_NS Identifier                                    { TRY specification.set_support_namespace(*$3); delete $3; CATCH }

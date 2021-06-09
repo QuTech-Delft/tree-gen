@@ -171,6 +171,13 @@ void Specification::set_header_doc(const std::string &doc) {
 }
 
 /**
+ * Sets the header filename for the #include directive.
+ */
+void Specification::set_header_fname(const std::string &fname) {
+    header_fname = fname;
+}
+
+/**
  * Sets the Python file documentation.
  */
 void Specification::set_python_doc(const std::string &doc) {

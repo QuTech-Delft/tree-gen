@@ -1160,7 +1160,11 @@ void generate(
     for (auto &include : specification.src_includes) {
         source << "#" << include << std::endl;
     }
-    source << "#include \"" << header_basename << "\"" << std::endl;
+    if (!specification.header_fname.empty()) {
+        source << "#include \"" << specification.header_fname << "\"" << std::endl;
+    } else {
+        source << "#include \"" << header_basename << "\"" << std::endl;
+    }
     source << std::endl;
     for (auto &name : specification.namespaces) {
         source << "namespace " << name << " {" << std::endl;

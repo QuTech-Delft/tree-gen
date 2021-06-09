@@ -868,6 +868,12 @@ public:
     std::string header_doc;
 
     /**
+     * Explicit filename for the header, in case it will not end up in the same
+     * directory that the source is compiled from.
+     */
+    std::string header_fname;
+
+    /**
      * Python file documentation.
      */
     std::string python_doc;
@@ -956,6 +962,11 @@ public:
      * Sets the header file documentation.
      */
     void set_header_doc(const std::string &doc);
+
+    /**
+     * Sets the header filename for the #include directive.
+     */
+    void set_header_fname(const std::string &fname);
 
     /**
      * Sets the Python file documentation.
