@@ -867,19 +867,7 @@ public:
      * Returns a copy of the reference to the first value in the list. If the
      * list is empty, an empty reference is returned.
      */
-    const Maybe<T> front() const {
-        if (vec.empty()) {
-            return Maybe<T>();
-        } else {
-            return vec.front();
-        }
-    }
-
-    /**
-     * Returns a copy of the reference to the first value in the list. If the
-     * list is empty, an empty reference is returned.
-     */
-    Maybe<T> front() {
+    Maybe<T> front() const {
         if (vec.empty()) {
             return Maybe<T>();
         } else {
@@ -891,19 +879,7 @@ public:
      * Returns a copy of the reference to the last value in the list. If the
      * list is empty, an empty reference is returned.
      */
-    const Maybe<T> back() const {
-        if (vec.empty()) {
-            return Maybe<T>();
-        } else {
-            return vec.back();
-        }
-    }
-
-    /**
-     * Returns a copy of the reference to the last value in the list. If the
-     * list is empty, an empty reference is returned.
-     */
-    Maybe<T> back() {
+    Maybe<T> back() const {
         if (vec.empty()) {
             return Maybe<T>();
         } else {
@@ -1367,9 +1343,14 @@ public:
     }
 
     /**
-     * Up- or downcasts this value. If the cast succeeds, the returned value
-     * is nonempty and its shared_ptr points to the same data block as this
-     * value does. If the cast fails, an empty Maybe is returned.
+     * Converts the link to a mutable reference to the Maybe node it links to.
+     */
+    Maybe<T> as_mut() const {
+        return Maybe<T>(val.lock());
+    }
+
+    /**
+     * Converts the link to a const reference to the Maybe node it links to.
      */
     Maybe<const T> as_const() const {
         return Maybe<const T>(std::const_pointer_cast<const T>(val.lock()));
