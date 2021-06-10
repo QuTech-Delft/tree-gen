@@ -1241,6 +1241,7 @@ public:
     template <class S>
     OptLink &operator=(const Maybe<S> &value) {
         set<S>(value);
+        return *this;
     }
 
     /**
@@ -1257,6 +1258,7 @@ public:
     template <class S>
     OptLink &operator=(Maybe<S> &&value) {
         set<S>(std::move(value));
+        return *this;
     }
 
     /**

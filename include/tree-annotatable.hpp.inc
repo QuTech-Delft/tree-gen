@@ -414,6 +414,13 @@ public:
     }
 
     /**
+     * Copies *all* the annotations from the source object to this object *by
+     * reference*. Existing annotations in this object that also exist in src
+     * are overwritten.
+     */
+    void copy_annotations(const Annotatable &src);
+
+    /**
      * Serializes all the annotations that have a known serialization format
      * (previously registered through serdes_registry.add()) to the given map.
      * Each annotation results in a single map entry, with the C++ typename
