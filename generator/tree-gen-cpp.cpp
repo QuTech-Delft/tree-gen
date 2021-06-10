@@ -903,6 +903,7 @@ void generate_dumper_class(
 
     // Functions for all node types.
     for (auto &node : nodes) {
+        bool first_prim = true;
         auto doc = "Dumps a `" + node->title_case_name + "` node.";
         format_doc(header, doc, "    ");
         header << "    void visit_" << node->snake_case_name;
@@ -1002,7 +1003,34 @@ void generate_dumper_class(
                         break;
 
                     case Prim:
-                        source << "    out << node." << attrib.name << " << std::endl;" << std::endl;
+                        if (first_prim) {
+                            source << "    std::stringstream ss;" << std::endl;
+                            source << "    size_t pos;" << std::endl;
+                            first_prim = false;
+                        } else {
+                            source << "    ss.str(\"\");" << std::endl;
+                            source << "    ss.clear();" << std::endl;
+                        }
+                        source << "    ss << node." << attrib.name << ";" << std::endl;
+                        source << "    pos = ss.str().find_last_not_of(\" \\n\\r\\t\");" << std::endl;
+                        source << "    if (pos != std::string::npos) {" << std::endl;
+                        source << "        ss.str(ss.str().erase(pos+1));" << std::endl;
+                        source << "    }" << std::endl;
+                        source << "    if (ss.str().find('\\n') == std::string::npos) {" << std::endl;
+                        source << "        out << ss.str() << std::endl;" << std::endl;
+                        source << "    } else {" << std::endl;
+                        source << "        out << \"" << attrib.prim_type << "<<\" << std::endl;" << std::endl;
+                        source << "        indent++;" << std::endl;
+                        source << "        std::string s;" << std::endl;
+                        source << "        while (!ss.eof()) {" << std::endl;
+                        source << "            std::getline(ss, s);" << std::endl;
+                        source << "            write_indent();" << std::endl;
+                        source << "            out << s << std::endl;" << std::endl;
+                        source << "        }" << std::endl;
+                        source << "        indent--;" << std::endl;
+                        source << "        write_indent();" << std::endl;
+                        source << "        out << \">>\" << std::endl;" << std::endl;
+                        source << "    }" << std::endl;
                         break;
 
                 }
