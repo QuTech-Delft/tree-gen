@@ -445,7 +445,7 @@ public:
             if (val == rhs.val) {
                 return true;
             } else {
-                return *val == *rhs;
+                return val->equals(*rhs);
             }
         } else {
             return val == rhs.get_ptr();
@@ -956,16 +956,31 @@ public:
     }
 
     /**
-     * Equality operator.
+     * Value-based equality operator.
      */
-    bool operator==(const Any& rhs) const {
+    bool equals(const Any &rhs) const {
+        if (vec.size() != rhs.vec.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < vec.size(); i++) {
+            if (!vec[i].equals(rhs.vec[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Pointer-based equality operator.
+     */
+    bool operator==(const Any &rhs) const {
         return vec == rhs.vec;
     }
 
     /**
-     * Inequality operator.
+     * Pointer-based inequality operator.
      */
-    inline bool operator!=(const Any& rhs) const {
+    inline bool operator!=(const Any &rhs) const {
         return !(*this == rhs);
     }
 
@@ -1367,14 +1382,22 @@ public:
     }
 
     /**
-     * Equality operator.
+     * Value-based equality operator. Note that this is identical to
+     * pointer-based equality for links.
+     */
+    bool equals(const OptLink &rhs) const {
+        return get_ptr() == rhs.get_ptr();
+    }
+
+    /**
+     * Pointer-based equality operator.
      */
     bool operator==(const OptLink& rhs) const {
         return get_ptr() == rhs.get_ptr();
     }
 
     /**
-     * Inequality operator.
+     * Pointer-based inequality operator.
      */
     inline bool operator!=(const OptLink& rhs) const {
         return !(*this == rhs);

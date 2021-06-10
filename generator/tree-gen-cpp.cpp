@@ -154,10 +154,13 @@ void generate_base_class(
     format_doc(header, "Returns a deep copy of this node.", "    ");
     header << "    virtual One<Node> clone() const = 0;" << std::endl << std::endl;
 
-    format_doc(header, "Equality operator. Ignores annotations!", "    ");
+    format_doc(header, "Value-based equality operator. Ignores annotations!", "    ");
+    header << "    virtual bool equals(const Node& rhs) const = 0;" << std::endl << std::endl;
+
+    format_doc(header, "Pointer-based equality operator.", "    ");
     header << "    virtual bool operator==(const Node& rhs) const = 0;" << std::endl << std::endl;
 
-    format_doc(header, "Inequality operator. Ignores annotations!", "    ");
+    format_doc(header, "Pointer-based inequality operator.", "    ");
     header << "    inline bool operator!=(const Node& rhs) const {" << std::endl;
     header << "        return !(*this == rhs);" << std::endl;
     header << "    }" << std::endl << std::endl;
@@ -496,12 +499,32 @@ void generate_node_class(
 
     // Print equality operator.
     if (node.derived.empty()) {
-        auto doc = "Equality operator. Ignores annotations!";
+        auto doc = "Value-based equality operator. Ignores annotations!";
         format_doc(header, doc, "    ");
-        header << "    bool operator==(const Node& rhs) const override;" << std::endl << std::endl;
+        header << "    bool equals(const Node &rhs) const override;" << std::endl << std::endl;
         format_doc(source, doc);
         source << "bool " << node.title_case_name;
-        source << "::operator==(const Node& rhs) const {" << std::endl;
+        source << "::equals(const Node &rhs) const {" << std::endl;
+        source << "    if (rhs.type() != NodeType::" << node.title_case_name << ") return false;" << std::endl;
+        if (!all_fields.empty()) {
+            source << "    auto rhsc = dynamic_cast<const " << node.title_case_name << "&>(rhs);" << std::endl;
+            for (auto &field : all_fields) {
+                if (field.type == Prim && field.ext_type == Prim) {
+                    source << "    if (this->" << field.name << " != rhsc." << field.name << ") return false;" << std::endl;
+                } else {
+                    source << "    if (!this->" << field.name << ".equals(rhsc." << field.name << ")) return false;" << std::endl;
+                }
+            }
+        }
+        source << "    return true;" << std::endl;
+        source << "}" << std::endl << std::endl;
+
+        doc = "Pointer-based equality operator.";
+        format_doc(header, doc, "    ");
+        header << "    bool operator==(const Node &rhs) const override;" << std::endl << std::endl;
+        format_doc(source, doc);
+        source << "bool " << node.title_case_name;
+        source << "::operator==(const Node &rhs) const {" << std::endl;
         source << "    if (rhs.type() != NodeType::" << node.title_case_name << ") return false;" << std::endl;
         if (!all_fields.empty()) {
             source << "    auto rhsc = dynamic_cast<const " << node.title_case_name << "&>(rhs);" << std::endl;
