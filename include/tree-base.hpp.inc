@@ -1392,15 +1392,43 @@ public:
     /**
      * Pointer-based equality operator.
      */
-    bool operator==(const OptLink& rhs) const {
+    bool operator==(const OptLink &rhs) const {
         return get_ptr() == rhs.get_ptr();
     }
 
     /**
      * Pointer-based inequality operator.
      */
-    inline bool operator!=(const OptLink& rhs) const {
+    inline bool operator!=(const OptLink &rhs) const {
         return !(*this == rhs);
+    }
+
+    /**
+     * Pointer-based greater-than.
+     */
+    bool operator>(const OptLink &rhs) const {
+        return get_ptr() > rhs.get_ptr();
+    }
+
+    /**
+     * Pointer-based greater-equal.
+     */
+    bool operator>=(const OptLink &rhs) const {
+        return get_ptr() >= rhs.get_ptr();
+    }
+
+    /**
+     * Pointer-based less-than.
+     */
+    bool operator<(const OptLink &rhs) const {
+        return get_ptr() < rhs.get_ptr();
+    }
+
+    /**
+     * Pointer-based less-equal.
+     */
+    bool operator<=(const OptLink &rhs) const {
+        return get_ptr() <= rhs.get_ptr();
     }
 
     /**
