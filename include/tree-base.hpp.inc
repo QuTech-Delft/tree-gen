@@ -87,25 +87,57 @@ private:
 public:
 
     /**
+     * The value returned for invalid links when exceptions are disabled.
+     */
+    static const size_t INVALID = (size_t)-1;
+
+    /**
+     * Whether to throw exceptions upon invalid access due to an ill-formed
+     * tree. This is enabled for the well-formedness check, but disabled when
+     * debug-dumping trees.
+     */
+    bool enable_exceptions = true;
+
+    /**
      * Registers a node pointer and gives it a sequence number. If a duplicate
-     * node is found, this raises a NotWellFormed.
+     * node is found and exceptions are enabled, this raises a NotWellFormed.
+     * Otherwise, the previously added link number is returned.
      */
     template <class T>
     size_t add(const Maybe<T> &ob);
 
     /**
+     * Registers a node pointer by means of a direct reference and gives it a
+     * sequence number. If a duplicate node is found and exceptions are enabled,
+     * this raises a NotWellFormed. Otherwise, the previously added link number is
+     * returned.
+     */
+    template <class T>
+    size_t add_ref(const T &ob);
+
+    /**
      * Returns the sequence number of a previously added node. If the node was
-     * not previously added, this raises a NotWellFormed.
+     * not previously added and exceptions are enabled, this raises a
+     * NotWellFormed. Otherwise, INVALID is returned.
      */
     template <class T>
     size_t get(const Maybe<T> &ob) const;
 
     /**
      * Returns the sequence number of a previously added node. If the node was
-     * not previously added, this raises a NotWellFormed.
+     * not previously added and exceptions are enabled, this raises a
+     * NotWellFormed. Otherwise, INVALID is returned.
      */
     template <class T>
     size_t get(const OptLink<T> &ob) const;
+
+    /**
+     * Returns the sequence number of a previously added node by means of a
+     * direct reference. If the node was not previously added and exceptions are
+     * enabled, this raises a NotWellFormed. Otherwise, INVALID is returned.
+     */
+    template <class T>
+    size_t get_ref(const T &ob) const;
 
 };
 
@@ -1598,7 +1630,8 @@ public:
 
 /**
  * Registers a node pointer and gives it a sequence number. If a duplicate
- * node is found, this raises a NotWellFormed.
+ * node is found and exceptions are enabled, this raises a NotWellFormed.
+ * Otherwise, the previously added link number is returned.
  */
 template <class T>
 size_t PointerMap::add(const Maybe<T> &ob) {
@@ -1606,8 +1639,20 @@ size_t PointerMap::add(const Maybe<T> &ob) {
 }
 
 /**
+ * Registers a node pointer by means of a direct reference and gives it a
+ * sequence number. If a duplicate node is found and exceptions are enabled,
+ * this raises a NotWellFormed. Otherwise, the previously added link number is
+ * returned.
+ */
+template <class T>
+size_t PointerMap::add_ref(const T &ob) {
+    return add_raw(reinterpret_cast<const void*>(&ob), typeid(T).name());
+}
+
+/**
  * Returns the sequence number of a previously added node. If the node was
- * not previously added, this raises a NotWellFormed.
+ * not previously added and exceptions are enabled, this raises a
+ * NotWellFormed. Otherwise, INVALID is returned.
  */
 template <class T>
 size_t PointerMap::get(const Maybe<T> &ob) const {
@@ -1616,11 +1661,22 @@ size_t PointerMap::get(const Maybe<T> &ob) const {
 
 /**
  * Returns the sequence number of a previously added node. If the node was
- * not previously added, this raises a NotWellFormed.
+ * not previously added and exceptions are enabled, this raises a
+ * NotWellFormed. Otherwise, INVALID is returned.
  */
 template <class T>
 size_t PointerMap::get(const OptLink<T> &ob) const {
     return get_raw(reinterpret_cast<const void*>(ob.get_ptr().get()), typeid(T).name());
+}
+
+/**
+ * Returns the sequence number of a previously added node by means of a
+ * direct reference. If the node was not previously added and exceptions are
+ * enabled, this raises a NotWellFormed. Otherwise, INVALID is returned.
+ */
+template <class T>
+size_t PointerMap::get_ref(const T &ob) const {
+    return get_raw(reinterpret_cast<const void*>(&ob), typeid(T).name());
 }
 
 /**

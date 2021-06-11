@@ -194,6 +194,18 @@ void generate_base_class(
     source << "    visit(dumper);" << std::endl;
     source << "}" << std::endl << std::endl;
 
+    format_doc(header, "Alternate debug dump that represents links and node uniqueness via sequence number tags.", "    ");
+    header << "    void dump_seq(std::ostream &out=std::cout, int indent=0);" << std::endl << std::endl;
+    format_doc(source, "Alternate debug dump that represents links and node uniqueness via sequence number tags.");
+    source << "void Node::dump_seq(std::ostream &out, int indent) {" << std::endl;
+    source << "    " << support_ns << "::base::PointerMap ids;" << std::endl;
+    source << "    ids.enable_exceptions = false;" << std::endl;
+    source << "    ids.add_ref(*this);" << std::endl;
+    source << "    find_reachable(ids);" << std::endl;
+    source << "    auto dumper = Dumper(out, indent, &ids);" << std::endl;
+    source << "    visit(dumper);" << std::endl;
+    source << "}" << std::endl << std::endl;
+
     for (auto &node : nodes) {
         generate_typecast_function(header, source, "Node", *node, false);
     }
@@ -862,7 +874,8 @@ void generate_dumper_class(
     std::ofstream &header,
     std::ofstream &source,
     Nodes &nodes,
-    std::string &source_location
+    std::string &source_location,
+    std::string &support_ns
 ) {
 
     // Print class header.
@@ -873,6 +886,8 @@ void generate_dumper_class(
     header << "    std::ostream &out;" << std::endl << std::endl;
     format_doc(header, "Current indentation level.", "    ");
     header << "    int indent = 0;" << std::endl << std::endl;
+    format_doc(header, "When non-null, the print node IDs from here instead of link contents.", "    ");
+    header << "    " << support_ns << "::base::PointerMap *ids;" << std::endl;
     format_doc(header, "Whether we're printing the contents of a link.", "    ");
     header << "    bool in_link = false;" << std::endl << std::endl;
 
@@ -889,7 +904,9 @@ void generate_dumper_class(
     // Write constructor.
     header << "public:" << std::endl << std::endl;
     format_doc(header, "Construct a dumping visitor.", "    ");
-    header << "    Dumper(std::ostream &out, int indent=0) : out(out), indent(indent) {};" << std::endl << std::endl;
+    header << "    Dumper(std::ostream &out, int indent=0, ";
+    header << support_ns << "::base::PointerMap *ids = nullptr) : ";
+    header << "out(out), indent(indent), ids(ids) {};" << std::endl << std::endl;
 
     // Print fallback function.
     format_doc(header, "Dumps a `Node`.", "    ");
@@ -913,7 +930,11 @@ void generate_dumper_class(
         source << "(" << node->title_case_name << " &node) {" << std::endl;
         source << "    write_indent();" << std::endl;
         auto attributes = node->all_fields();
-        source << "    out << \"" << node->title_case_name << "(\";" << std::endl;
+        source << "    out << \"" << node->title_case_name << "\";" << std::endl;
+        source << "    if (ids != nullptr) {" << std::endl;
+        source << "        out << \"@\" << ids->get_ref(node);" << std::endl;
+        source << "    }" << std::endl;
+        source << "    out << \"(\";" << std::endl;
         if (!source_location.empty()) {
             source << "    if (auto loc = node.get_annotation_ptr<" << source_location << ">()) {" << std::endl;
             source << "        out << \" # \" << *loc;" << std::endl;
@@ -941,6 +962,11 @@ void generate_dumper_class(
                             source << "        out << \"!MISSING\" << std::endl;" << std::endl;
                         } else {
                             source << "        out << \"-\" << std::endl;" << std::endl;
+                        }
+                        if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
+                            source << "    } else if (ids != nullptr && ids->get(node." << attrib.name << ") != (size_t)-1) {" << std::endl;
+                            auto type = attrib.node_type ? attrib.node_type->title_case_name : attrib.prim_type;
+                            source << "        out << \"" << type << "@\" << ids->get(node." << attrib.name << ") << std::endl;" << std::endl;
                         }
                         source << "    } else {" << std::endl;
                         source << "        out << \"<\" << std::endl;" << std::endl;
@@ -1272,7 +1298,7 @@ void generate(
     generate_visitor_base_class(header, source, nodes);
     generate_visitor_class(header, source, nodes);
     generate_recursive_visitor_class(header, source, nodes);
-    generate_dumper_class(header, source, nodes, specification.source_location);
+    generate_dumper_class(header, source, nodes, specification.source_location, specification.support_namespace);
 
     // Generate the templated visit method and its specialization for void
     // return type.

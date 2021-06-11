@@ -6,13 +6,18 @@ namespace base {
  * name of its type for the error message.
  */
 size_t PointerMap::add_raw(const void *ptr, const char *name) {
-    size_t sequence = map.size();
-    if (map.find(ptr) != map.end()) {
-        std::ostringstream ss{};
-        ss << "Duplicate node of type " << name;
-        ss << "at address " << std::hex << ptr << " found in tree";
-        throw NotWellFormed(ss.str());
+    auto it = map.find(ptr);
+    if (it != map.end()) {
+        if (enable_exceptions) {
+            std::ostringstream ss{};
+            ss << "Duplicate node of type " << name;
+            ss << "at address " << std::hex << ptr << " found in tree";
+            throw NotWellFormed(ss.str());
+        } else {
+            return it->second;
+        }
     }
+    size_t sequence = map.size();
     map.emplace(ptr, sequence);
     return sequence;
 }
@@ -24,10 +29,14 @@ size_t PointerMap::add_raw(const void *ptr, const char *name) {
 size_t PointerMap::get_raw(const void *ptr, const char *name) const {
     auto it = map.find(ptr);
     if (it == map.end()) {
-        std::ostringstream ss{};
-        ss << "Link to node of type " << name;
-        ss << " at address " << std::hex << ptr << " not found in tree";
-        throw NotWellFormed(ss.str());
+        if (enable_exceptions) {
+            std::ostringstream ss{};
+            ss << "Link to node of type " << name;
+            ss << " at address " << std::hex << ptr << " not found in tree";
+            throw NotWellFormed(ss.str());
+        } else {
+            return (size_t)-1;
+        }
     }
     return it->second;
 }
