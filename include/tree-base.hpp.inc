@@ -1368,16 +1368,9 @@ public:
     }
 
     /**
-     * Returns an immutable copy of the underlying shared_ptr.
+     * Returns a copy of the underlying shared_ptr.
      */
-    std::shared_ptr<const T> get_ptr() const {
-        return val.lock();
-    }
-
-    /**
-     * Returns a mutable copy of the underlying shared_ptr.
-     */
-    std::shared_ptr<T> get_ptr() {
+    std::shared_ptr<T> get_ptr() const {
         return val.lock();
     }
 
