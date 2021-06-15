@@ -1343,10 +1343,10 @@ public:
     }
 
     /**
-     * Returns a const reference to the contained value. Raises an
-     * `out_of_range` when the reference is empty.
+     * Returns a reference to the contained value. Raises an `out_of_range`
+     * when the reference is empty.
      */
-    const T &deref() const {
+    T &deref() const {
         if (val.expired()) {
             throw OutOfRange("dereferencing empty or expired (Opt)Link object");
         }
@@ -1354,16 +1354,16 @@ public:
     }
 
     /**
-     * Constant dereference operator, shorthand for `deref()`.
+     * Dereference operator, shorthand for `deref()`.
      */
-    const T &operator*() const {
+    T &operator*() const {
         return deref();
     }
 
     /**
-     * Constant dereference operator, shorthand for `deref()`.
+     * Dereference operator, shorthand for `deref()`.
      */
-    const T *operator->() const {
+    T *operator->() const {
         return &deref();
     }
 
