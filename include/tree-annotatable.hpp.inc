@@ -126,6 +126,20 @@ public:
     }
 
     /**
+     * Returns the contents of the Anything object as a void*.
+     */
+    void *get() {
+        return data;
+    }
+
+    /**
+     * Returns the contents of the Anything object as a const void*.
+     */
+    const void *get() const {
+        return data;
+    }
+
+    /**
      * Returns the type index corresponding to the wrapped object.
      */
     std::type_index get_type_index() const;
@@ -288,7 +302,50 @@ private:
     /**
      * The annotations stored with this node.
      */
-    TREE_MAP(std::type_index, std::shared_ptr<Anything>) annotations;
+    using AnnotationMap = TREE_MAP(std::type_index, std::shared_ptr<Anything>);
+    AnnotationMap annotations = {};
+
+    /**
+     * Cached type index for the most recently accessed annotation.
+     */
+    mutable const std::type_index *cached_annot_type = nullptr;
+
+    /**
+     * Cached data pointer for the most recently accessed annotation.
+     */
+    mutable void *cached_annot_ptr = nullptr;
+
+    /**
+     * Returns a reference to a statically allocated type_index object, that is
+     * hopefully (but not necessarily, unfortunately) unique for a given T.
+     */
+    template <typename T>
+    const std::type_index &get_static_type_index() const {
+        static const auto TI = std::type_index(typeid(T));
+        return TI;
+    }
+
+    /**
+     * Returns the pointer to the value of the annotation of type T, or nullptr
+     * if there is no such annotation. This makes use of the cached_annot_*
+     * system to considerably speed up consecutive access to the same kind of
+     * annotation.
+     */
+    template <typename T>
+    void *find_annotation_cached() const {
+        const auto &ti = get_static_type_index<T>();
+        if (cached_annot_type == &ti) {
+            return cached_annot_ptr;
+        }
+        auto it = annotations.find(ti);
+        if (it != annotations.end()) {
+            cached_annot_type = &ti;
+            cached_annot_ptr = it->second->get();
+            return cached_annot_ptr;
+        } else {
+            return nullptr;
+        }
+    }
 
 public:
 
@@ -311,7 +368,8 @@ public:
      */
     template <typename T>
     void set_annotation(const T &ob) {
-        TREE_MAP_SET(annotations, std::type_index(typeid(T)), std::make_shared<Anything>(Anything::make<T>(ob)));
+        TREE_MAP_SET(annotations, get_static_type_index<T>(), std::make_shared<Anything>(Anything::make<T>(ob)));
+        cached_annot_type = nullptr;
     }
 
     /**
@@ -325,7 +383,8 @@ public:
      */
     template <typename T>
     void set_annotation(T &&ob) {
-        TREE_MAP_SET(annotations, std::type_index(typeid(T)), std::make_shared<Anything>(Anything::make<T>(std::move(ob))));
+        TREE_MAP_SET(annotations, get_static_type_index<T>(), std::make_shared<Anything>(Anything::make<T>(std::move(ob))));
+        cached_annot_type = nullptr;
     }
 
     /**
@@ -334,7 +393,7 @@ public:
      */
     template <typename T>
     bool has_annotation() const {
-        return annotations.count(std::type_index(typeid(T)));
+        return find_annotation_cached<T>() != nullptr;
     }
 
     /**
@@ -343,12 +402,7 @@ public:
      */
     template <typename T>
     T *get_annotation_ptr() {
-        auto it = annotations.find(std::type_index(typeid(T)));
-        if (it != annotations.end()) {
-            return it->second->get_mut<T>();
-        } else {
-            return nullptr;
-        }
+        return static_cast<T*>(find_annotation_cached<T>());
     }
 
     /**
@@ -357,12 +411,7 @@ public:
      */
     template <typename T>
     const T *get_annotation_ptr() const {
-        auto it = annotations.find(std::type_index(typeid(T)));
-        if (it != annotations.end()) {
-            return it->second->get_const<T>();
-        } else {
-            return nullptr;
-        }
+        return static_cast<const T*>(find_annotation_cached<T>());
     }
 
     /**
@@ -396,7 +445,8 @@ public:
      */
     template <typename T>
     void erase_annotation() {
-        annotations.erase(std::type_index(typeid(T)));
+        annotations.erase(get_static_type_index<T>());
+        cached_annot_type = nullptr;
     }
 
     /**
