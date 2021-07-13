@@ -273,14 +273,14 @@ public:
      * the reference is copied; use clone() if you want an actual copy.
      */
     template <class S>
-    Maybe(const Maybe<S> &value) : val(std::static_pointer_cast<T>(value.val)) {}
+    Maybe(const Maybe<S> &value) : val(std::static_pointer_cast<T>(value.get_ptr())) {}
 
     /**
      * Constructor for an empty or filled node given an existing Maybe. Only
      * the reference is copied; use clone() if you want an actual copy.
      */
     template <class S>
-    Maybe(Maybe<S> &&value) : val(std::static_pointer_cast<T>(std::move(value.val))) {}
+    Maybe(Maybe<S> &&value) : val(std::static_pointer_cast<T>(std::move(value.get_ptr()))) {}
 
     /**
      * Constructs a new node in-place.
