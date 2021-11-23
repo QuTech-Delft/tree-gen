@@ -405,7 +405,7 @@ public:
     T &deref() const {
         if (!val) {
             throw OutOfRange(
-                std::string("dereferencing empty Maybe/One object or type ") +
+                std::string("dereferencing empty Maybe/One object of type ") +
                 typeid(T).name()
             );
         }
