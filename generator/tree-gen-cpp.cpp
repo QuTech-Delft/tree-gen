@@ -505,7 +505,7 @@ void generate_node_class(
                 source << "    node->" << field.name << " = this->" << field.name << ".clone();" << std::endl;
             }
         }
-        source << "    return std::move(node);" << std::endl;
+        source << "    return node;" << std::endl;
         source << "}" << std::endl << std::endl;
     }
 
