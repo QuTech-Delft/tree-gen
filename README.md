@@ -1,7 +1,7 @@
 # tree-gen
 
 [![Documentation Status](https://readthedocs.org/projects/tree-gen/badge/?version=latest)](https://tree-gen.readthedocs.io/en/latest)
-[![GitHub Actions Build Status](https://github.com/QE-Lab/tree-gen/workflows/Test/badge.svg)](https://github.com/qe-lab/tree-gen/actions)
+[![GitHub Actions Build Status](https://github.com/QuTech-Delft/tree-gen/workflows/Test/badge.svg)](https://github.com/qutech-delft/tree-gen/actions)
 
 `tree-gen` is a C++ and Python code generator for tree-like structures common in
 parser and compiler codebases. The tree is described using a simple and concise
