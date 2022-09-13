@@ -125,6 +125,7 @@ target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRAR
 # Require flex/bison; if not installed, this will try to build from source.
 set(FLEX_VERSION_REQUIRED 2.6.1)
 set(BISON_VERSION_REQUIRED 3.0)
+set(BISON_VERSION_TO_BUILD 3.8)
 include(cmake/flex-bison.cmake)
 
 # Generate the lexer.
