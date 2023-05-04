@@ -77,7 +77,7 @@
 %token BAD_CHARACTER
 
 /* Misc. Yacc directives */
-%error-verbose
+%define parse.error verbose
 %start Root
 
 %%
