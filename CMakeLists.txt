@@ -105,12 +105,6 @@ set(TREE_LIB_PRIVATE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/")
 set(TREE_LIB_PRIVATE_INCLUDE ${TREE_LIB_PRIVATE_INCLUDE} PARENT_SCOPE)
 set(TREE_LIB_PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
-if(MSVC)
-    target_compile_options(tree-lib-obj PUBLIC
-        /D_CRT_NONSTDC_NO_DEPRECATE
-        /D_CRT_SECURE_NO_WARNINGS
-    )
-endif()
 target_include_directories(
     tree-lib-obj
     PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
@@ -172,6 +166,12 @@ add_executable(
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-cpp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-python.cpp"
 )
+if(MSVC)
+    target_compile_options(tree-gen PRIVATE
+        /D_CRT_NONSTDC_NO_DEPRECATE
+        /D_CRT_SECURE_NO_WARNINGS
+    )
+endif()
 
 target_include_directories(
     tree-gen
