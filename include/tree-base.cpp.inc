@@ -117,7 +117,7 @@ bool Completable::is_well_formed() const {
     try {
         check_well_formed();
         return true;
-    } catch (NotWellFormed &e) {
+    } catch (NotWellFormed &) {
         return false;
     }
 }
