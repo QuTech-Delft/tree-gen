@@ -166,6 +166,12 @@ add_executable(
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-cpp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-python.cpp"
 )
+if(MSVC)
+    target_compile_options(tree-gen PRIVATE
+        /D_CRT_NONSTDC_NO_DEPRECATE
+        /D_CRT_SECURE_NO_WARNINGS
+    )
+endif()
 
 target_include_directories(
     tree-gen

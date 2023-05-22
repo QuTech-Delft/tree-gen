@@ -622,30 +622,30 @@ void StructureWriter::write_int(int64_t int_value, uint8_t major) {
         stream().write(reinterpret_cast<char*>(&data), 1);
     } else if (value < 0x100ll) {
         data[0] |= 24u;
-        data[1] = value;
+        data[1] = static_cast<uint8_t>(value);
         stream().write(reinterpret_cast<char*>(&data), 2);
     } else if (value < 0x10000ll) {
         data[0] |= 25u;
-        data[1] = value >> 8u;
-        data[2] = value;
+        data[1] = static_cast<uint8_t>(value >> 8u);
+        data[2] = static_cast<uint8_t>(value);
         stream().write(reinterpret_cast<char*>(&data), 3);
     } else if (value < 0x100000000ll) {
         data[0] |= 26u;
-        data[1] = value >> 24u;
-        data[2] = value >> 16u;
-        data[3] = value >> 8u;
-        data[4] = value;
+        data[1] = static_cast<uint8_t>(value >> 24u);
+        data[2] = static_cast<uint8_t>(value >> 16u);
+        data[3] = static_cast<uint8_t>(value >> 8u);
+        data[4] = static_cast<uint8_t>(value);
         stream().write(reinterpret_cast<char*>(&data), 5);
     } else {
         data[0] |= 27u;
-        data[1] = value >> 56u;
-        data[2] = value >> 48u;
-        data[3] = value >> 40u;
-        data[4] = value >> 32u;
-        data[5] = value >> 24u;
-        data[6] = value >> 16u;
-        data[7] = value >> 8u;
-        data[8] = value;
+        data[1] = static_cast<uint8_t>(value >> 56u);
+        data[2] = static_cast<uint8_t>(value >> 48u);
+        data[3] = static_cast<uint8_t>(value >> 40u);
+        data[4] = static_cast<uint8_t>(value >> 32u);
+        data[5] = static_cast<uint8_t>(value >> 24u);
+        data[6] = static_cast<uint8_t>(value >> 16u);
+        data[7] = static_cast<uint8_t>(value >> 8u);
+        data[8] = static_cast<uint8_t>(value);
         stream().write(reinterpret_cast<char*>(&data), 9);
     }
 }
