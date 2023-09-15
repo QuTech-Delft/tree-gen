@@ -1333,9 +1333,12 @@ void generate(
 
     // Close the namespaces.
     for (auto name_it = specification.namespaces.rbegin(); name_it != specification.namespaces.rend(); name_it++) {
-        header << "} // namespace " << *name_it << std::endl << std::endl;
+        header << "} // namespace " << *name_it << std::endl;
         source << "} // namespace " << *name_it << std::endl;
     }
+    header << std::endl;
+    source << std::endl;
+
     format_doc(header, "std::ostream support via fmt (uses operator<<).");
     auto namespaces = fmt::format("{}::", fmt::join(specification.namespaces, "::"));
     header << "template <> struct fmt::formatter<" << namespaces << "Node> : ostream_formatter {};" << std::endl;
