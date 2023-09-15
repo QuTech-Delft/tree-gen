@@ -167,7 +167,7 @@ void generate_base_class(
     header << "    }" << std::endl << std::endl;
 
     header << "protected:" << std::endl << std::endl;
-    format_doc(header, "Internal helper method for visiter pattern.", "    ");
+    format_doc(header, "Internal helper method for visitor pattern.", "    ");
     header << "    virtual void visit_internal(VisitorBase &visitor, void *retval=nullptr) = 0;" << std::endl << std::endl;
 
     header << "public:" << std::endl << std::endl;
@@ -1341,7 +1341,9 @@ void generate(
 
     format_doc(header, "std::ostream support via fmt (uses operator<<).");
     auto namespaces = fmt::format("{}::", fmt::join(specification.namespaces, "::"));
-    header << "template <> struct fmt::formatter<" << namespaces << "Node> : ostream_formatter {};" << std::endl;
+    for (auto &node : nodes) {
+        header << "template <> struct fmt::formatter<" << namespaces << node->title_case_name << "> : ostream_formatter {};" << std::endl;
+    }
 }
 
 } // namespace cpp
