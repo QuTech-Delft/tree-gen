@@ -70,8 +70,8 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Everything needs C++20 support.
-set(CMAKE_CXX_STANDARD 20)
+# Everything needs C++11 support.
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -130,7 +130,6 @@ target_include_directories(
     PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
     PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
 )
-target_compile_features(tree-lib-obj PUBLIC cxx_std_20)
 target_link_libraries(tree-lib-obj PRIVATE fmt::fmt)
 
 # Main tree-gen library in shared or static form as managed by cmake's
