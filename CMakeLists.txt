@@ -130,7 +130,7 @@ target_include_directories(
     PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
     PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
 )
-target_link_libraries(tree-lib-obj PUBLIC fmt::fmt)
+target_link_libraries(tree-lib-obj PRIVATE fmt::fmt)
 
 # Main tree-gen library in shared or static form as managed by cmake's
 # internal BUILD_SHARED_LIBS variable.
