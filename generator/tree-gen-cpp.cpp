@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <cctype>
+#include <fmt/format.h>
 #include <unordered_set>
 #include "tree-gen-cpp.hpp"
 
@@ -1123,6 +1124,7 @@ void generate(
     header << "#pragma once" << std::endl;
     header << std::endl;
     header << "#include <iostream>" << std::endl;
+    header << "#include <fmt/ostream.h>" << std::endl;
     for (auto &include : specification.includes) {
         header << "#" << include << std::endl;
     }
@@ -1331,12 +1333,12 @@ void generate(
 
     // Close the namespaces.
     for (auto name_it = specification.namespaces.rbegin(); name_it != specification.namespaces.rend(); name_it++) {
-        header << "} // namespace " << *name_it << std::endl;
+        header << "} // namespace " << *name_it << std::endl << std::endl;
         source << "} // namespace " << *name_it << std::endl;
     }
-    header << std::endl;
-    source << std::endl;
-
+    format_doc(header, "std::ostream support via fmt (uses operator<<).");
+    auto namespaces = fmt::format("{}::", fmt::join(specification.namespaces, "::"));
+    header << "template <> struct fmt::formatter<" << namespaces << "Node> : ostream_formatter {};" << std::endl;
 }
 
 } // namespace cpp
