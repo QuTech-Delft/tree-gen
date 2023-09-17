@@ -130,7 +130,9 @@ target_include_directories(
     PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
     PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
 )
-target_link_libraries(tree-lib-obj PRIVATE fmt::fmt)
+target_link_libraries(tree-lib-obj
+    INTERFACE fmt::fmt
+)
 
 # Main tree-gen library in shared or static form as managed by cmake's
 # internal BUILD_SHARED_LIBS variable.
@@ -194,7 +196,9 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-target_link_libraries(tree-gen PRIVATE fmt::fmt)
+target_link_libraries(tree-gen
+    PRIVATE fmt::fmt
+)
 
 # Utility function for generating a C++-only tree with tree-gen.
 function(generate_tree TREE HDR SRC)
