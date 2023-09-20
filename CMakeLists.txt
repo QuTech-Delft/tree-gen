@@ -92,12 +92,16 @@ set(BISON_VERSION_REQUIRED 3.0)
 set(BISON_VERSION_TO_BUILD 3.8)
 include(cmake/flex-bison.cmake)
 
-# fmt 10.1.1
-FetchContent_Declare(fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG "f5e54359df4c26b6230fc61d38aa294581393084"
-)
-FetchContent_MakeAvailable(fmt)
+set(fmt_VERSION_REQUIRED 10.1.1)
+find_package(fmt ${fmt_VERSION_REQUIRED})
+if(NOT fmt_FOUND)
+    # fmt 10.1.1
+    FetchContent_Declare(fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG "f5e54359df4c26b6230fc61d38aa294581393084"
+    )
+    FetchContent_MakeAvailable(fmt)
+endif()
 
 
 #=============================================================================#
