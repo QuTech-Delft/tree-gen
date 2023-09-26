@@ -3,20 +3,19 @@
 [![Documentation Status](https://readthedocs.org/projects/tree-gen/badge/?version=latest)](https://tree-gen.readthedocs.io/en/latest)
 [![GitHub Actions Build Status](https://github.com/QuTech-Delft/tree-gen/workflows/Test/badge.svg)](https://github.com/qutech-delft/tree-gen/actions)
 
-`tree-gen` is a C++ and Python code generator for tree-like structures common in
-parser and compiler codebases. The tree is described using a simple and concise
-language, so all the repetitive C++ and Python stuff can be generated. This
-includes serialization and deserialization to [CBOR](https://cbor.io/), allowing
-easy interoperation between C++ and Python.
+`tree-gen` is a C++ and Python code generator for tree-like structures common in parser and compiler codebases.
+The tree is described using a simple and concise language, so all the repetitive C++ and Python stuff can be generated.
+This includes serialization and deserialization to [CBOR](https://cbor.io/),
+allowing easy interoperation between C++ and Python.
 
 ## Usage and "installation"
 
-`tree-gen` is a very lightweight tool, intended to be compiled along with your
-project rather than to actually be installed. The assumption is that your main
-project will be written in C++ and that you're using CMake. If these assumptions
-are invalid, you'll have to do some extra work on your own. If they *are* valid,
-however, it should be really easy. Just include `tree-gen` as a submodule or
-copy it into your project, then do something like
+`tree-gen` is a very lightweight tool,
+intended to be compiled along with your project rather than to actually be installed.
+The assumption is that your main project will be written in C++ and that you're using CMake.
+If these assumptions are invalid, you'll have to do some extra work on your own. If they *are* valid,
+however, it should be really easy.
+Just include `tree-gen` as a submodule or copy it into your project, then do something like
 
 ```cmake
 add_subdirectory(tree-gen)
@@ -41,8 +40,7 @@ target_include_directories(
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-# To use tree-gen's support library (you could substitute your own if you feel
-# up to the task):
+# To use tree-gen's support library (you could substitute your own if you feel up to the task):
 target_link_libraries(my-software tree-lib)
 ```
 
@@ -50,12 +48,12 @@ and CMake *Should*™ handle everything for you.
 
 `tree-gen` does have some dependencies:
 
- - A compiler with C++11 support (MSVC, GCC, and Clang are tested in CI);
+ - A compiler with C++11 support (MSVC, GCC, and Clang are tested in CI)
  - Flex 2.6.1+
  - Bison 3.0+
 
-If you're on a POSIX system and Flex/Bison are too old or not installed, the
-buildsystem will attempt to download and build them from source for you.
+If you're on a POSIX system and Flex/Bison are too old or not installed,
+the buildsystem will attempt to download and build them from source for you.
 
 For usage information beyond this, [Read The Docs](https://tree-gen.readthedocs.io/).
 

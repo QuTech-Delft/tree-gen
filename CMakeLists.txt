@@ -82,6 +82,29 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 
 #=============================================================================#
+# Package dependencies                                                        #
+#=============================================================================#
+include(FetchContent)
+
+# Require flex/bison; if not installed, this will try to build from source.
+set(FLEX_VERSION_REQUIRED 2.6.1)
+set(BISON_VERSION_REQUIRED 3.0)
+set(BISON_VERSION_TO_BUILD 3.8)
+include(cmake/flex-bison.cmake)
+
+set(fmt_VERSION_REQUIRED 10.1.1)
+find_package(fmt ${fmt_VERSION_REQUIRED})
+if(NOT fmt_FOUND)
+    # fmt 10.1.1
+    FetchContent_Declare(fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG "f5e54359df4c26b6230fc61d38aa294581393084"
+    )
+    FetchContent_MakeAvailable(fmt)
+endif()
+
+
+#=============================================================================#
 # tree-lib support library target                                             #
 #=============================================================================#
 
@@ -104,6 +127,9 @@ target_include_directories(
     PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
     PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
 )
+target_link_libraries(tree-lib-obj
+    PRIVATE fmt::fmt
+)
 
 # Set variables at possible parent projects.
 get_directory_property(hasParent PARENT_DIRECTORY)
@@ -124,12 +150,6 @@ target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRAR
 #=============================================================================#
 # tree-gen code generator tool                                                #
 #=============================================================================#
-
-# Require flex/bison; if not installed, this will try to build from source.
-set(FLEX_VERSION_REQUIRED 2.6.1)
-set(BISON_VERSION_REQUIRED 3.0)
-set(BISON_VERSION_TO_BUILD 3.8)
-include(cmake/flex-bison.cmake)
 
 # Generate the lexer.
 if(WIN32)
@@ -180,6 +200,10 @@ target_include_directories(
     tree-gen
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/generator"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
+target_link_libraries(tree-gen
+    PRIVATE fmt::fmt
 )
 
 # Utility function for generating a C++-only tree with tree-gen.

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <cctype>
+#include <fmt/format.h>
 #include <unordered_set>
 #include "tree-gen-cpp.hpp"
 
@@ -166,7 +167,7 @@ void generate_base_class(
     header << "    }" << std::endl << std::endl;
 
     header << "protected:" << std::endl << std::endl;
-    format_doc(header, "Internal helper method for visiter pattern.", "    ");
+    format_doc(header, "Internal helper method for visitor pattern.", "    ");
     header << "    virtual void visit_internal(VisitorBase &visitor, void *retval=nullptr) = 0;" << std::endl << std::endl;
 
     header << "public:" << std::endl << std::endl;
@@ -1123,6 +1124,7 @@ void generate(
     header << "#pragma once" << std::endl;
     header << std::endl;
     header << "#include <iostream>" << std::endl;
+    header << "#include <fmt/ostream.h>" << std::endl;
     for (auto &include : specification.includes) {
         header << "#" << include << std::endl;
     }
@@ -1337,6 +1339,11 @@ void generate(
     header << std::endl;
     source << std::endl;
 
+    format_doc(header, "std::ostream support via fmt (uses operator<<).");
+    auto namespaces = fmt::format("{}::", fmt::join(specification.namespaces, "::"));
+    for (auto &node : nodes) {
+        header << "template <> struct fmt::formatter<" << namespaces << node->title_case_name << "> : ostream_formatter {};" << std::endl;
+    }
 }
 
 } // namespace cpp
