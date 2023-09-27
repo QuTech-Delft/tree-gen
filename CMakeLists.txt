@@ -4,7 +4,7 @@ if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif()
 
-project(tree-gen CXX)
+project(tree-gen LANGUAGES CXX)
 
 # If tree-gen was already included elsewhere in the project, don't include it
 # again. There should be only one place for it and one version per project.
@@ -109,11 +109,7 @@ endif()
 #=============================================================================#
 
 # Create the library.
-set(
-    TREE_LIB_SRCS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp"
-)
-set(TREE_LIB_SRCS ${TREE_LIB_SRCS} PARENT_SCOPE)
+set(TREE_LIB_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp")
 add_library(tree-lib-obj OBJECT ${TREE_LIB_SRCS})
 set_property(TARGET tree-lib-obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 
@@ -121,14 +117,11 @@ set_property(TARGET tree-lib-obj PROPERTY POSITION_INDEPENDENT_CODE ON)
 # header file to be different when the library is compiled compared to when it
 # is used.
 set(TREE_LIB_PRIVATE_DEFS BUILDING_TREE_LIB)
-set(TREE_LIB_PRIVATE_DEFS ${TREE_LIB_PRIVATE_DEFS} PARENT_SCOPE)
 target_compile_definitions(tree-lib-obj PRIVATE ${TREE_LIB_PRIVATE_DEFS})
 
 # Add the appropriate include paths.
 set(TREE_LIB_PRIVATE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/")
-set(TREE_LIB_PRIVATE_INCLUDE ${TREE_LIB_PRIVATE_INCLUDE} PARENT_SCOPE)
 set(TREE_LIB_PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
-set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
 target_include_directories(
     tree-lib-obj
     PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
@@ -137,6 +130,15 @@ target_include_directories(
 target_link_libraries(tree-lib-obj
     PRIVATE fmt::fmt
 )
+
+# Set variables at possible parent projects.
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+    set(TREE_LIB_SRCS ${TREE_LIB_SRCS} PARENT_SCOPE)
+    set(TREE_LIB_PRIVATE_DEFS ${TREE_LIB_PRIVATE_DEFS} PARENT_SCOPE)
+    set(TREE_LIB_PRIVATE_INCLUDE ${TREE_LIB_PRIVATE_INCLUDE} PARENT_SCOPE)
+    set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
+endif()
 
 # Main tree-gen library in shared or static form as managed by cmake's
 # internal BUILD_SHARED_LIBS variable.
