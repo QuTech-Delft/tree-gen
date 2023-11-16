@@ -1226,7 +1226,7 @@ void generate_json_dumper_class(
                         break;
 
                     case Prim:
-                        fmt::print(source, R"(    out << "\"{0}\":\"{0}\"";)""\n", attrib.name);
+                        fmt::print(source, R"(    out << "\"{0}\":\"" << node.{0} << "\"";)""\n", attrib.name);
                         break;
 
                 }
