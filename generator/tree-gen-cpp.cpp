@@ -1137,14 +1137,6 @@ void generate_json_dumper_class(
             node->title_case_name);
         fmt::print(source, "    out << \"{{\";\n");
         bool first_attrib = true;
-        if (!source_location.empty()) {
-            fmt::print(source,
-                R"(    if (auto loc = node.get_annotation_ptr<{}>()) {{)""\n"
-                R"(        out << "\"source_location\":\"" << *loc << "\"";)""\n"
-                R"(    }})""\n",
-                source_location);
-            first_attrib = false;
-        }
         if (!attributes.empty()) {
             for (auto &attrib : attributes) {
                 if (!first_attrib) {
@@ -1236,6 +1228,15 @@ void generate_json_dumper_class(
 
                 }
             }
+        }
+        if (!source_location.empty()) {
+            fmt::print(source, "    if (auto loc = node.get_annotation_ptr<{}>()) {{\n", source_location);
+            if (!attributes.empty()) {
+                fmt::print(source, "    out << \",\";\n");
+            }
+            fmt::print(source,
+                   R"(        out << "\"source_location\":\"" << *loc << "\"";)""\n"
+                   R"(    }})""\n");
         }
         fmt::print(source, R"(    out << "}}";)""\n");
         fmt::print(source,
