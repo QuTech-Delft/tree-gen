@@ -2,12 +2,14 @@
  * C++ generation source file for \ref tree-gen.
  */
 
-#include <fstream>
-#include <iostream>
+#include "tree-gen-cpp.hpp"
+
 #include <cctype>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fstream>
+#include <iostream>
 #include <unordered_set>
-#include "tree-gen-cpp.hpp"
 
 namespace tree_gen {
 namespace cpp {
@@ -195,6 +197,14 @@ void generate_base_class(
     source << "    visit(dumper);" << std::endl;
     source << "}" << std::endl << std::endl;
 
+    format_doc(header, "Writes a JSON dump of this node to the given stream.", "    ");
+    header << "    void dump_json(std::ostream &out=std::cout);\n\n";
+    format_doc(source, "Writes a JSON dump of this node to the given stream.");
+    source << "void Node::dump_json(std::ostream &out) {\n";
+    source << "    auto dumper = JsonDumper(out);\n";
+    source << "    visit(dumper);\n";
+    source << "}\n\n";
+
     format_doc(header, "Alternate debug dump that represents links and node uniqueness via sequence number tags.", "    ");
     header << "    void dump_seq(std::ostream &out=std::cout, int indent=0);" << std::endl << std::endl;
     format_doc(source, "Alternate debug dump that represents links and node uniqueness via sequence number tags.");
@@ -223,7 +233,7 @@ void generate_base_class(
         header << "         const " << support_ns << "::cbor::MapReader &map," << std::endl;
         header << "         " << support_ns << "::base::IdentifierMap &ids" << std::endl;
         header << "    );" << std::endl << std::endl;
-        format_doc(source, "Writes a debug dump of this node to the given stream.");
+        format_doc(source, "Deserializes the given node.");
         source << "std::shared_ptr<Node> Node::deserialize(" << std::endl;
         source << "    const " << support_ns << "::cbor::MapReader &map," << std::endl;
         source << "    " << support_ns << "::base::IdentifierMap &ids" << std::endl;
@@ -586,7 +596,7 @@ void generate_node_class(
             format_doc(header, "Deserializes the given node.", "    ");
             header << "    static std::shared_ptr<" << node.title_case_name << "> ";
             header << "deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids);" << std::endl << std::endl;
-            format_doc(source, "Writes a debug dump of this node to the given stream.");
+            format_doc(source, "Deserializes the given node.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
             source << node.title_case_name << "::deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids) {" << std::endl;
             source << "    (void)ids;" << std::endl;
@@ -650,7 +660,7 @@ void generate_node_class(
             format_doc(header, "Deserializes the given node.", "    ");
             header << "    static std::shared_ptr<" << node.title_case_name << "> ";
             header << "deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids);" << std::endl << std::endl;
-            format_doc(source, "Writes a debug dump of this node to the given stream.");
+            format_doc(source, "Deserializes the given node.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
             source << node.title_case_name << "::deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids) {" << std::endl;
             source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
@@ -1073,6 +1083,167 @@ void generate_dumper_class(
 }
 
 /**
+ * Generate the JSON dumper class.
+ */
+void generate_json_dumper_class(
+    std::ofstream &header,
+    std::ofstream &source,
+    Nodes &nodes,
+    std::string &source_location,
+    std::string &support_ns
+) {
+
+    // Print class header.
+    format_doc(header, "Visitor class that JSON dumps a tree to a stream");
+    fmt::print(header,
+        "class JsonDumper : public RecursiveVisitor {{\n"
+        "protected:\n\n");
+    format_doc(header, "Output stream to dump to.", "    ");
+    fmt::print(header, "    std::ostream &out;\n\n");
+    format_doc(header, "Whether we're printing the contents of a link.", "    ");
+    fmt::print(header, "    bool in_link = false;\n\n");
+
+    // Write constructor.
+    fmt::print(header, "public:\n\n");
+    format_doc(header, "Construct a dumping visitor.", "    ");
+    fmt::print(header, "    JsonDumper(std::ostream &out) : out(out) {{}};\n\n");
+
+    // Print fallback function.
+    format_doc(header, "JSON dumps a `Node`.", "    ");
+    fmt::print(header, "    void visit_node(Node &node) override;\n");
+    format_doc(source, "JSON dumps a `Node`.");
+    fmt::print(source,
+        "void JsonDumper::visit_node(Node &node) {{\n"
+        "    (void)node;\n"
+        "    out << \"!Node()\";\n"
+        "}}\n\n");
+
+    // Functions for all node types.
+    for (auto &node : nodes) {
+        auto doc = fmt::format("JSON dumps a `{}` node.", node->title_case_name);
+        format_doc(header, doc, "    ");
+        fmt::print(header, "    void visit_{}({} &node) override;\n\n",
+            node->snake_case_name, node->title_case_name);
+        format_doc(source, doc);
+        fmt::print(source,
+            R"(void JsonDumper::visit_{0}({1} &node) {{)""\n"
+            R"(    out << "{{";)""\n"
+            R"(    out << "\"{1}\":";)""\n",
+            node->snake_case_name,
+            node->title_case_name);
+        auto attributes = node->all_fields();
+        fmt::print(source, "    out << \"{{\";\n");
+        bool first_attrib = true;
+        if (!source_location.empty()) {
+            fmt::print(source,
+                R"(    if (auto loc = node.get_annotation_ptr<{}>()) {{)""\n"
+                R"(        out << "\"source_location\":\"" << *loc << "\"";)""\n"
+                R"(    }})""\n",
+                source_location);
+            first_attrib = false;
+        }
+        if (!attributes.empty()) {
+            for (auto &attrib : attributes) {
+                if (!first_attrib) {
+                    fmt::print(source, "    out << \",\";\n");
+                }
+                first_attrib = false;
+                switch (attrib.ext_type) {
+                    case Maybe:
+                    case One:
+                    case OptLink:
+                    case Link:
+                        fmt::print(source,
+                            R"(    if (node.{0}.empty()) {{)""\n"
+                            R"(        out << "\"{0}\":\"{1}\"";)""\n",
+                            attrib.name,
+                            (attrib.ext_type == One || attrib.ext_type == Link) ? "!MISSING" : "-");
+                        fmt::print(source,
+                            "    }} else {{\n");
+                        if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
+                            fmt::print(source,
+                                "        if (!in_link) {{\n"
+                                "            in_link = true;\n");
+                            if (attrib.type == Prim) {
+                                fmt::print(source,
+                                    R"(            out << "\"{0}\":";)""\n"
+                                    R"(            if (!node.{0}.empty()) {{)""\n"
+                                    R"(                node.{0}->dump_json(out);)""\n"
+                                    R"(            }})""\n",
+                                    attrib.name);
+                            } else {
+                                fmt::print(source,
+                                    R"(            out << "\"{0}\":";)""\n"
+                                    R"(            node.{0}.visit(*this);)""\n",
+                                attrib.name);
+                            }
+                            fmt::print(source,
+                                R"(            in_link = false;)""\n"
+                                R"(        }} else {{)""\n"
+                                R"(            out << "\"{0}\":\"...\"";)""\n"
+                                R"(        }})""\n",
+                                attrib.name);
+                        } else if (attrib.type == Prim) {
+                            fmt::print(source,
+                                R"(      out << "\"{0}\":";)""\n"
+                                R"(      if (!node.{0}.empty()) {{)""\n"
+                                R"(          node.{0}->dump_json(out);)""\n"
+                                R"(      }})""\n",
+                                attrib.name);
+                        } else {
+                            fmt::print(source,
+                                R"(      out << "\"{0}\":";)""\n"
+                                R"(      node.{0}.visit(*this);)""\n",
+                                attrib.name);
+                        }
+                        fmt::print(source,
+                            "    }}\n");
+                        break;
+
+                    case Any:
+                    case Many:
+                        fmt::print(source,
+                            "    if (node.{0}.empty()) {{\n"
+                            R"(        out << "\"{0}\":\"{1}\"";)""\n"
+                            "    }} else {{\n"
+                            R"(        out << "\"{0}\":[";)""\n"
+                            "        bool first_element = true;\n"
+                            "        for (auto &sptr : node.{0}) {{\n"
+                            "            if (first_element) {{\n"
+                            "                first_element = false;\n"
+                            "            }} else {{\n"
+                            "                out << \",\";\n"
+                            "            }}\n"
+                            "            if (!sptr.empty()) {{\n"
+                            "                {2}\n"
+                            "            }} else {{\n"
+                            "                out << \"!NULL\";\n"
+                            "            }}\n"
+                            "        }}\n"
+                            "        out << \"]\";\n"
+                            "    }}\n",
+                            attrib.name,
+                            (attrib.ext_type == Many) ? "!MISSING" : "[]",
+                            (attrib.type == Prim) ? "sptr->dump_json(out);" : "sptr->visit(*this);");
+                        break;
+
+                    case Prim:
+                        fmt::print(source, R"(    out << "\"{0}\":\"{0}\"";)""\n", attrib.name);
+                        break;
+
+                }
+            }
+        }
+        fmt::print(source, R"(    out << "}}";)""\n");
+        fmt::print(source,
+            "    out << \"}}\";\n"
+            "}}\n\n");
+    }
+
+    fmt::print(header, "}};\n\n");
+}
+
+/**
  * Generate the complete C++ code (source and header).
  */
 void generate(
@@ -1261,6 +1432,7 @@ void generate(
     header << "class Visitor;" << std::endl;
     header << "class RecursiveVisitor;" << std::endl;
     header << "class Dumper;" << std::endl;
+    header << "class JsonDumper;" << std::endl;
     header << std::endl;
 
     // Generate the NodeType enum.
@@ -1301,6 +1473,7 @@ void generate(
     generate_visitor_class(header, source, nodes);
     generate_recursive_visitor_class(header, source, nodes);
     generate_dumper_class(header, source, nodes, specification.source_location, specification.support_namespace);
+    generate_json_dumper_class(header, source, nodes, specification.source_location, specification.support_namespace);
 
     // Generate the templated visit method and its specialization for void
     // return type.
