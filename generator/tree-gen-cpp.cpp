@@ -1129,7 +1129,7 @@ void generate_json_dumper_class(
         // If the node has no attributes, the code that does the JSON dump won't reference the node parameter
         // So (void) it so that we don't get an unused parameter compiler error
         if (source_location.empty() && attributes.empty()) {
-            fmt::print(source, "    (void){0};\n", node->snake_case_name);
+            fmt::print(source, "    (void)node;\n");
         }
         fmt::print(source,
             R"(    out << "{{";)""\n"
