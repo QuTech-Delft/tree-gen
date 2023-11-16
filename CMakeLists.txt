@@ -189,12 +189,6 @@ add_executable(
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-cpp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-python.cpp"
 )
-if(MSVC)
-    target_compile_options(tree-gen PRIVATE
-        /D_CRT_NONSTDC_NO_DEPRECATE
-        /D_CRT_SECURE_NO_WARNINGS
-    )
-endif()
 
 target_include_directories(
     tree-gen
@@ -206,9 +200,36 @@ target_link_libraries(tree-gen
     PRIVATE fmt::fmt
 )
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(tree-gen PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+        -fPIC
+        -Wno-error=deprecated-declarations
+        -Wno-error=restrict
+        -Wno-error=sign-compare
+    )
+elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    target_compile_options(tree-gen PRIVATE
+        -Wall -Wextra -Werror -Wfatal-errors
+        -fPIC
+        -Wno-error=sign-compare
+        -Wno-error=unused-private-field
+        -Wno-error=unused-but-set-variable
+    )
+elseif(MSVC)
+    target_compile_options(tree-gen PRIVATE
+        /W3 /w34996  # not using /WX at the moment because the flex generated code has some warnings
+        /D_CRT_NONSTDC_NO_DEPRECATE
+        /D_CRT_SECURE_NO_WARNINGS
+        /D_UNICODE /DUNICODE
+        /diagnostics:column /EHsc /FC /fp:precise /Gd /GS /MP /sdl /utf-8 /Zc:inline
+    )
+else()
+    message(SEND_ERROR "Unknown compiler!")
+endif()
+
 # Utility function for generating a C++-only tree with tree-gen.
 function(generate_tree TREE HDR SRC)
-
     # Get the directory for the header file and make sure it exists.
     get_filename_component(HDR_DIR "${HDR}" PATH)
     file(MAKE_DIRECTORY "${HDR_DIR}")
@@ -223,12 +244,10 @@ function(generate_tree TREE HDR SRC)
         OUTPUT "${HDR}" "${SRC}"
         DEPENDS "${TREE}" tree-gen
     )
-
 endfunction()
 
 # Utility function for generating a C++ and Python tree with tree-gen.
 function(generate_tree_py TREE HDR SRC PY)
-
     # Get the directory for the header file and make sure it exists.
     get_filename_component(HDR_DIR "${HDR}" PATH)
     file(MAKE_DIRECTORY "${HDR_DIR}")
@@ -247,7 +266,6 @@ function(generate_tree_py TREE HDR SRC PY)
         OUTPUT "${HDR}" "${SRC}" "${PY}"
         DEPENDS "${TREE}" tree-gen
     )
-
 endfunction()
 
 

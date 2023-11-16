@@ -684,6 +684,7 @@ void generate_visitor_base_class(
     std::ofstream &source,
     Nodes &nodes
 ) {
+    (void) source;
 
     // Print class header.
     format_doc(
@@ -727,7 +728,6 @@ void generate_visitor_class(
     std::ofstream &source,
     Nodes &nodes
 ) {
-
     // Print class header.
     format_doc(
         header,
@@ -828,7 +828,6 @@ void generate_visitor_class(
         source << "    this->visit_" << node->snake_case_name << "(node);" << std::endl;
         source << "}" << std::endl << std::endl;
     }
-
 }
 
 /**
@@ -1089,8 +1088,7 @@ void generate_json_dumper_class(
     std::ofstream &header,
     std::ofstream &source,
     Nodes &nodes,
-    std::string &source_location,
-    std::string &support_ns
+    std::string &source_location
 ) {
 
     // Print class header.
@@ -1473,7 +1471,7 @@ void generate(
     generate_visitor_class(header, source, nodes);
     generate_recursive_visitor_class(header, source, nodes);
     generate_dumper_class(header, source, nodes, specification.source_location, specification.support_namespace);
-    generate_json_dumper_class(header, source, nodes, specification.source_location, specification.support_namespace);
+    generate_json_dumper_class(header, source, nodes, specification.source_location);
 
     // Generate the templated visit method and its specialization for void
     // return type.
