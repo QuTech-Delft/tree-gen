@@ -1123,13 +1123,18 @@ void generate_json_dumper_class(
         fmt::print(header, "    void visit_{}({} &node) override;\n\n",
             node->snake_case_name, node->title_case_name);
         format_doc(source, doc);
-        fmt::print(source,
-            R"(void JsonDumper::visit_{0}({1} &node) {{)""\n"
-            R"(    out << "{{";)""\n"
-            R"(    out << "\"{1}\":";)""\n",
-            node->snake_case_name,
-            node->title_case_name);
         auto attributes = node->all_fields();
+        fmt::print(source, "void JsonDumper::visit_{0}({1} &node) {{\n",
+            node->snake_case_name, node->title_case_name);
+        // If the node has no attributes, the code that does the JSON dump won't reference the node parameter
+        // So (void) it so that we don't get an unused parameter compiler error
+        if (source_location.empty() && attributes.empty()) {
+            fmt::print(source, "    (void){0};\n", node->snake_case_name);
+        }
+        fmt::print(source,
+            R"(    out << "{{";)""\n"
+            R"(    out << "\"{0}\":";)""\n",
+            node->title_case_name);
         fmt::print(source, "    out << \"{{\";\n");
         bool first_attrib = true;
         if (!source_location.empty()) {
