@@ -9,6 +9,7 @@
 #include <fmt/ostream.h>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <unordered_set>
 
 namespace tree_gen {
@@ -684,7 +685,7 @@ void generate_visitor_base_class(
     std::ofstream &source,
     Nodes &nodes
 ) {
-    (void) source;
+    (void)source;
 
     // Print class header.
     format_doc(
@@ -887,7 +888,6 @@ void generate_dumper_class(
     std::string &source_location,
     std::string &support_ns
 ) {
-
     // Print class header.
     format_doc(header, "Visitor class that debug-dumps a tree to a stream");
     header << "class Dumper : public RecursiveVisitor {" << std::endl;
@@ -1090,7 +1090,6 @@ void generate_json_dumper_class(
     Nodes &nodes,
     std::string &source_location
 ) {
-
     // Print class header.
     format_doc(header, "Visitor class that JSON dumps a tree to a stream");
     fmt::print(header,
@@ -1135,12 +1134,12 @@ void generate_json_dumper_class(
             R"(    out << "{{";)""\n"
             R"(    out << "\"{0}\":";)""\n",
             node->title_case_name);
-        fmt::print(source, "    out << \"{{\";\n");
+        fmt::print(source, R"(    out << "{{";)""\n");
         bool first_attrib = true;
         if (!attributes.empty()) {
             for (auto &attrib : attributes) {
                 if (!first_attrib) {
-                    fmt::print(source, "    out << \",\";\n");
+                    fmt::print(source, R"(    out << ",";)""\n");
                 }
                 first_attrib = false;
                 switch (attrib.ext_type) {
@@ -1153,8 +1152,7 @@ void generate_json_dumper_class(
                             R"(        out << "\"{0}\":\"{1}\"";)""\n",
                             attrib.name,
                             (attrib.ext_type == One || attrib.ext_type == Link) ? "!MISSING" : "-");
-                        fmt::print(source,
-                            "    }} else {{\n");
+                        fmt::print(source, "    }} else {{\n");
                         if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
                             fmt::print(source,
                                 "        if (!in_link) {{\n"
@@ -1191,37 +1189,34 @@ void generate_json_dumper_class(
                                 R"(      node.{0}.visit(*this);)""\n",
                                 attrib.name);
                         }
-                        fmt::print(source,
-                            "    }}\n");
+                        fmt::print(source, "    }}\n");
                         break;
-
                     case Any:
                     case Many:
                         fmt::print(source,
-                            "    if (node.{0}.empty()) {{\n"
+                            R"(    if (node.{0}.empty()) {{)""\n"
                             R"(        out << "\"{0}\":\"{1}\"";)""\n"
-                            "    }} else {{\n"
+                            R"(    }} else {{)""\n"
                             R"(        out << "\"{0}\":[";)""\n"
-                            "        bool first_element = true;\n"
-                            "        for (auto &sptr : node.{0}) {{\n"
-                            "            if (first_element) {{\n"
-                            "                first_element = false;\n"
-                            "            }} else {{\n"
-                            "                out << \",\";\n"
-                            "            }}\n"
-                            "            if (!sptr.empty()) {{\n"
-                            "                {2}\n"
-                            "            }} else {{\n"
-                            "                out << \"!NULL\";\n"
-                            "            }}\n"
-                            "        }}\n"
-                            "        out << \"]\";\n"
-                            "    }}\n",
+                            R"(        bool first_element = true;)""\n"
+                            R"(        for (auto &sptr : node.{0}) {{)""\n"
+                            R"(            if (first_element) {{)""\n"
+                            R"(                first_element = false;)""\n"
+                            R"(            }} else {{)""\n"
+                            R"(                out << ",";)""\n"
+                            R"(            }})""\n"
+                            R"(            if (!sptr.empty()) {{)""\n"
+                            R"(                {2};)""\n"
+                            R"(            }} else {{)""\n"
+                            R"(                out << "!NULL";)""\n"
+                            R"(            }})""\n"
+                            R"(        }})""\n"
+                            R"(        out << "]";)""\n"
+                            R"(    }})""\n",
                             attrib.name,
                             (attrib.ext_type == Many) ? "!MISSING" : "[]",
-                            (attrib.type == Prim) ? "sptr->dump_json(out);" : "sptr->visit(*this);");
+                            (attrib.type == Prim) ? "sptr->dump_json(out)" : "sptr->visit(*this)");
                         break;
-
                     case Prim:
                         fmt::print(source, R"(    out << "\"{0}\":\"" << node.{0} << "\"";)""\n", attrib.name);
                         break;
@@ -1232,16 +1227,16 @@ void generate_json_dumper_class(
         if (!source_location.empty()) {
             fmt::print(source, "    if (auto loc = node.get_annotation_ptr<{}>()) {{\n", source_location);
             if (!attributes.empty()) {
-                fmt::print(source, "    out << \",\";\n");
+                fmt::print(source, R"(        out << ",";)""\n");
             }
             fmt::print(source,
-                   R"(        out << "\"source_location\":\"" << *loc << "\"";)""\n"
-                   R"(    }})""\n");
+               R"(        out << "\"source_location\":\"" << *loc << "\"";)""\n"
+               R"(    }})""\n");
         }
         fmt::print(source, R"(    out << "}}";)""\n");
         fmt::print(source,
-            "    out << \"}}\";\n"
-            "}}\n\n");
+            R"(    out << "}}";)""\n"
+            R"(}})""\n\n");
     }
 
     fmt::print(header, "}};\n\n");
