@@ -405,7 +405,7 @@ void generate_node_class(
         format_doc(source, doc);
         source << "void " << node.title_case_name;
         source << "::find_reachable(" << support_ns << "::base::PointerMap &map) const {" << std::endl;
-        source << "    (void)map;" << std::endl;
+        source << "    (void) map;" << std::endl;
         for (auto &field : all_fields) {
             auto type = (field.type == Prim) ? field.ext_type : field.type;
             switch (type) {
@@ -429,7 +429,7 @@ void generate_node_class(
         format_doc(source, doc);
         source << "void " << node.title_case_name;
         source << "::check_complete(const " << support_ns << "::base::PointerMap &map) const {" << std::endl;
-        source << "    (void)map;" << std::endl;
+        source << "    (void) map;" << std::endl;
         if (node.is_error_marker) {
             source << "    throw " << support_ns << "::base::NotWellFormed(\"" << node.title_case_name << " error node in tree\");" << std::endl;
         } else {
@@ -573,7 +573,7 @@ void generate_node_class(
             source << "    " << support_ns << "::cbor::MapWriter &map," << std::endl;
             source << "    const " << support_ns << "::base::PointerMap &ids" << std::endl;
             source << ") const {" << std::endl;
-            source << "    (void)ids;" << std::endl;
+            source << "    (void) ids;" << std::endl;
             source << "    map.append_string(\"@t\", \"" << node.title_case_name << "\");" << std::endl;
             bool first = true;
             for (const auto &field : all_fields) {
@@ -600,7 +600,7 @@ void generate_node_class(
             format_doc(source, "Deserializes the given node.");
             source << "std::shared_ptr<" << node.title_case_name << "> ";
             source << node.title_case_name << "::deserialize(const " << support_ns << "::cbor::MapReader &map, " << support_ns << "::base::IdentifierMap &ids) {" << std::endl;
-            source << "    (void)ids;" << std::endl;
+            source << "    (void) ids;" << std::endl;
             source << "    auto type = map.at(\"@t\").as_string();" << std::endl;
             source << "    if (type != \"" << node.title_case_name << "\") {" << std::endl;
             source << "        throw std::runtime_error(\"Schema validation failed: unexpected node type \" + type);" << std::endl;
@@ -685,7 +685,7 @@ void generate_visitor_base_class(
     std::ofstream &source,
     Nodes &nodes
 ) {
-    (void)source;
+    (void) source;
 
     // Print class header.
     format_doc(
@@ -799,7 +799,7 @@ void generate_visitor_class(
     format_doc(source, "Internal visitor function for nodes of any type.");
     source << "template <>" << std::endl;
     source << "void Visitor<void>::raw_visit_node(Node &node, void *retval) {" << std::endl;
-    source << "    (void)retval;" << std::endl;
+    source << "    (void) retval;" << std::endl;
     source << "    this->visit_node(node);" << std::endl;
     source << "}" << std::endl << std::endl;
 
@@ -825,7 +825,7 @@ void generate_visitor_class(
         source << "template <>" << std::endl;
         source << "void Visitor<void>::raw_visit_" << node->snake_case_name;
         source << "(" << node->title_case_name << " &node, void *retval) {" << std::endl;
-        source << "    (void)retval;" << std::endl;
+        source << "    (void) retval;" << std::endl;
         source << "    this->visit_" << node->snake_case_name << "(node);" << std::endl;
         source << "}" << std::endl << std::endl;
     }
@@ -923,7 +923,7 @@ void generate_dumper_class(
     header << "    void visit_node(Node &node) override;" << std::endl;
     format_doc(source, "Dumps a `Node`.");
     source << "void Dumper::visit_node(Node &node) {" << std::endl;
-    source << "    (void)node;" << std::endl;
+    source << "    (void) node;" << std::endl;
     source << "    write_indent();" << std::endl;
     source << "    out << \"!Node()\" << std::endl;" << std::endl;
     source << "}" << std::endl << std::endl;
@@ -1111,7 +1111,7 @@ void generate_json_dumper_class(
     format_doc(source, "JSON dumps a `Node`.");
     fmt::print(source,
         "void JsonDumper::visit_node(Node &node) {{\n"
-        "    (void)node;\n"
+        "    (void) node;\n"
         "    out << \"!Node()\";\n"
         "}}\n\n");
 
@@ -1128,7 +1128,7 @@ void generate_json_dumper_class(
         // If the node has no attributes, the code that does the JSON dump won't reference the node parameter
         // So (void) it so that we don't get an unused parameter compiler error
         if (source_location.empty() && attributes.empty()) {
-            fmt::print(source, "    (void)node;\n");
+            fmt::print(source, "    (void) node;\n");
         }
         fmt::print(source,
             R"(    out << "{{";)""\n"

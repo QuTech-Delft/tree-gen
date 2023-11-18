@@ -71,7 +71,7 @@ void IdentifierMap::restore_links() const {
  * NotWellFormed exception is thrown.
  */
 void Completable::find_reachable(PointerMap &map) const {
-    (void)map;
+    (void) map;
 }
 
 /**
@@ -85,7 +85,7 @@ void Completable::find_reachable(PointerMap &map) const {
  * If not complete, a NotWellFormed exception is thrown.
  */
 void Completable::check_complete(const PointerMap &map) const {
-    (void)map;
+    (void) map;
 }
 
 /**
