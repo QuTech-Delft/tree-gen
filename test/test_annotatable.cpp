@@ -1,7 +1,8 @@
-#include <sstream>
-#include <cstdio>
 #include "tree-annotatable.hpp"
-#include "assert.hpp"
+
+#include <gmock/gmock.h>
+#include <sstream>
+
 
 struct TestA {
     int a;
@@ -15,7 +16,7 @@ void serialize_test_a(const TestA &obj, tree::cbor::MapWriter &map) {
 
 TestA deserialize_test_a(const tree::cbor::MapReader &map) {
     return TestA {
-        (int)map.at("a").as_int(),
+        (int) map.at("a").as_int(),
         map.at("b").as_string()
     };
 }
@@ -38,8 +39,8 @@ public:
     }
 };
 
-int main() {
 
+TEST(annotatable, main) {
     // Register serdes types.
     tree::annotatable::serdes_registry.add<TestA>(serialize_test_a, deserialize_test_a);
     tree::annotatable::serdes_registry.add<TestB>();
@@ -69,11 +70,10 @@ int main() {
     b.deserialize_annotations(tree::cbor::Reader(encoded).as_map());
 
     // Check the annotations.
-    CHECK_EQ(b.get_annotation<TestA>().a, 3);
-    CHECK_EQ(b.get_annotation<TestA>().b, "hello world");
-    CHECK_EQ(b.get_annotation<TestB>().a, true);
-    CHECK_EQ(b.get_annotation<TestB>().b, 3.1415);
+    EXPECT_EQ(b.get_annotation<TestA>().a, 3);
+    EXPECT_EQ(b.get_annotation<TestA>().b, "hello world");
+    EXPECT_EQ(b.get_annotation<TestB>().a, true);
+    EXPECT_EQ(b.get_annotation<TestB>().b, 3.1415);
 
     std::cout << "Test passed" << std::endl;
-    return 0;
 }
