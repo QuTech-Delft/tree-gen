@@ -136,8 +136,8 @@ Root            :                                                               
 %%
 
 void yyerror(YYLTYPE* yyllocp, yyscan_t unused, tree_gen::Specification &specification, const char* msg) {
-    (void)unused;
-    (void)specification;
+    (void) unused;
+    (void) specification;
     std::cerr << "Parse error at " << ":"
               << yyllocp->first_line << ":" << yyllocp->first_column << ".."
               << yyllocp->last_line << ":" << yyllocp->last_column

@@ -189,6 +189,11 @@ int main() {
     tree->dump();
     MARKER
 
+    // Testing the JSON dump
+    tree->dump_json();
+    std::printf("\n");
+    MARKER
+
     // Note that we can still use these pointers despite ownership having been
     // passed to the node objects because they refer to the same piece of
     // memory. In practice, though, you would do this during the parser actions,
@@ -317,7 +322,7 @@ int main() {
     ASSERT(expr->visit(eval) == 14);
     MARKER
 
-    // If we wouldn't have implemented ``visit_node()``, the
+    // If we hadn't implemented ``visit_node()``, the
     // ``RvalueEvaluator eval{};`` line would break, as RvalueEvaluator would
     // be an abstract class because of it. And while the above may look pretty
     // complete, it is in fact not:

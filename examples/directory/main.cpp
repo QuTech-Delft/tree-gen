@@ -255,6 +255,11 @@ int main() {
     system2->dump();
     MARKER
 
+    // Testing the JSON dump
+    system2->dump_json();
+    std::printf("\n");
+    MARKER
+
     // Note that equality for two link edges is satisfied only if they point to
     // the exact same node. That's not the case for the links in our two
     // entirely separate trees, so the two trees register as unequal.
