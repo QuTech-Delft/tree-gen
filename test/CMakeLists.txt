@@ -10,7 +10,6 @@ FetchContent_MakeAvailable(
     googletest
 )
 include(GoogleTest)
-find_package(GTest REQUIRED)
 
 # Test executable
 add_executable(${PROJECT_NAME}_test)
@@ -33,8 +32,8 @@ target_include_directories(${PROJECT_NAME}_test PRIVATE
 # Target options
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
     tree-lib
-    GTest::gmock
-    GTest::gtest
+    gmock
+    gtest
 )
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(${PROJECT_NAME}_test PRIVATE
