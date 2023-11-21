@@ -6,7 +6,6 @@
 #include "tree-gen-cpp.hpp"
 
 #include <cctype>
-#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fstream>
 #include <iostream>
@@ -1093,18 +1092,19 @@ void generate_json_dumper_class(
 ) {
     // Print class header.
     format_doc(header, "Visitor class that JSON dumps a tree to a stream");
-    fmt::print(header,
-        "class JsonDumper : public RecursiveVisitor {{\n"
-        "protected:\n\n");
+    fmt::print(header, R"(
+        class JsonDumper : public RecursiveVisitor {
+        protected:)"_indent_0_remove_first_line);
+    fmt::print(header, "\n");
     format_doc(header, "Output stream to dump to.", "    ");
-    fmt::print(header, "    std::ostream &out;\n\n");
+    fmt::print(header, "std::ostream &out;\n"_indent_4);
     format_doc(header, "Whether we're printing the contents of a link.", "    ");
-    fmt::print(header, "    bool in_link = false;\n\n");
+    fmt::print(header, "bool in_link = false;\n"_indent_4);
 
     // Write constructor.
     fmt::print(header, "public:\n\n");
     format_doc(header, "Construct a dumping visitor.", "    ");
-    fmt::print(header, "JsonDumper(std::ostream &out) : out(out) {{}};"_indent_4);
+    fmt::print(header, "JsonDumper(std::ostream &out) : out(out) {};"_indent_4);
     fmt::print(header, "\n");
 
     // Print fallback function.
@@ -1112,22 +1112,22 @@ void generate_json_dumper_class(
     fmt::print(header, "void visit_node(Node &node) override;"_indent_4);
     format_doc(source, "JSON dumps a `Node`.");
     fmt::print(source, R""(
-        void JsonDumper::visit_node(Node &node) {{
+        void JsonDumper::visit_node(Node &node) {
             (void) node;
             out << "!Node()";
-        }})""_indent_0_drop_1);
+        })""_indent_0_remove_first_line);
     fmt::print(source, "\n");
 
     // Functions for all node types.
     for (auto &node : nodes) {
-        auto doc = fmt::format("JSON dumps a `{}` node.", node->title_case_name);
+        auto doc = fmt::format("JSON dumps a `{0}` node.", node->title_case_name);
         format_doc(header, doc, "    ");
         fmt::print(header, "void visit_{0}({1} &node) override;"_indent_4,
             node->snake_case_name, node->title_case_name);
         fmt::print(header, "\n");
         format_doc(source, doc);
         auto attributes = node->all_fields();
-        fmt::print(source, "void JsonDumper::visit_{0}({1} &node) {{\n",
+        fmt::print(source, "void JsonDumper::visit_{0}({1} &node) {"_indent_0,
             node->snake_case_name, node->title_case_name);
         // If the node has no attributes, the code that does the JSON dump won't reference the node parameter
         // So (void) it so that we don't get an unused parameter compiler error
@@ -1135,10 +1135,10 @@ void generate_json_dumper_class(
             fmt::print(source, "(void) node;"_indent_4);
         }
         fmt::print(source, R"(
-            out << "{{";
-            out << "\"{0}\":";)"_indent_4_drop_1,
+            out << "{";
+            out << "\"{0}\":";)"_indent_4_remove_first_line,
             node->title_case_name);
-        fmt::print(source, R"(out << "{{";)"_indent_4);
+        fmt::print(source, R"(out << "{";)"_indent_4);
         bool first_attrib = true;
         if (!attributes.empty()) {
             for (auto &attrib : attributes) {
@@ -1152,71 +1152,71 @@ void generate_json_dumper_class(
                     case OptLink:
                     case Link:
                         fmt::print(source, R"(
-                            if (node.{0}.empty()) {{
-                                out << "\"{0}\":\"{1}\"";)"_indent_4_drop_1,
+                            if (node.{0}.empty()) {
+                                out << "\"{0}\":\"{1}\"";)"_indent_4_remove_first_line,
                             attrib.name,
                             (attrib.ext_type == One || attrib.ext_type == Link) ? "!MISSING" : "-");
-                        fmt::print(source, "}} else {{\n"_indent_4);
+                        fmt::print(source, "} else {\n"_indent_4);
                         if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
                             fmt::print(source, R"(
-                                if (!in_link) {{
-                                    in_link = true;)"_indent_8_drop_1);
+                                if (!in_link) {
+                                    in_link = true;)"_indent_8_remove_first_line);
                             if (attrib.type == Prim) {
                                 fmt::print(source, R"(
                                     out << "\"{0}\":";
-                                    if (!node.{0}.empty()) {{
+                                    if (!node.{0}.empty()) {
                                         node.{0}->dump_json(out);
-                                    }})"_indent_12_drop_1,
+                                    })"_indent_12_remove_first_line,
                                     attrib.name);
                             } else {
                                 fmt::print(source, R"(
                                     out << "\"{0}\":";
-                                    node.{0}.visit(*this);)"_indent_12_drop_1,
+                                    node.{0}.visit(*this);)"_indent_12_remove_first_line,
                                 attrib.name);
                             }
                             fmt::print(source, R"(
                                     in_link = false;
-                                }} else {{
+                                } else {
                                     out << "\"{0}\":\"...\"";
-                                }})"_indent_8_drop_1,
+                                })"_indent_8_remove_first_line,
                                 attrib.name);
                         } else if (attrib.type == Prim) {
                             fmt::print(source, R"(
                                 out << "\"{0}\":";
-                                if (!node.{0}.empty()) {{
+                                if (!node.{0}.empty()) {
                                     node.{0}->dump_json(out);
-                                }})"_indent_4_drop_1,
+                                })"_indent_4_remove_first_line,
                                 attrib.name);
                         } else {
                             fmt::print(source, R"(
                                 out << "\"{0}\":";
-                                node.{0}.visit(*this);)"_indent_4_drop_1,
+                                node.{0}.visit(*this);)"_indent_4_remove_first_line,
                                 attrib.name);
                         }
-                        fmt::print(source, "}}"_indent_4);
+                        fmt::print(source, "}"_indent_4);
                         break;
                     case Any:
                     case Many:
                         fmt::print(source, R"(
-                            if (node.{0}.empty()) {{
+                            if (node.{0}.empty()) {
                                 out << "\"{0}\":\"{1}\"";
-                            }} else {{
+                            } else {
                                 out << "\"{0}\":[";
                                 bool first_element = true;
-                                for (auto &sptr : node.{0}) {{
-                                    if (first_element) {{
+                                for (auto &sptr : node.{0}) {
+                                    if (first_element) {
                                         first_element = false;
-                                    }} else {{
+                                    } else {
                                         out << ",";
-                                    }}
-                                    if (!sptr.empty()) {{
+                                    }
+                                    if (!sptr.empty()) {
                                         {2};
-                                    }} else {{
+                                    } else {
                                         out << "!NULL";
-                                    }}
-                                }}
+                                    }
+                                }
                                 out << "]";
-                            }})"_indent_4_drop_1,
+                            })"_indent_4_remove_first_line,
                             attrib.name,
                             (attrib.ext_type == Many) ? "!MISSING" : "[]",
                             (attrib.type == Prim) ? "sptr->dump_json(out)" : "sptr->visit(*this)");
@@ -1229,22 +1229,22 @@ void generate_json_dumper_class(
             }
         }
         if (!source_location.empty()) {
-            fmt::print(source, "if (auto loc = node.get_annotation_ptr<{}>()) {{"_indent_4, source_location);
+            fmt::print(source, "if (auto loc = node.get_annotation_ptr<{0}>()) {"_indent_4, source_location);
             if (!attributes.empty()) {
                 fmt::print(source, R"(out << ",";)"_indent_8);
             }
             fmt::print(source, R"(
                    out << "\"source_location\":\"" << *loc << "\"";
-               }})"_indent_4_drop_1);
+               })"_indent_4_remove_first_line);
         }
-        fmt::print(source, R"(out << "}}";)"_indent_4);
+        fmt::print(source, R"(out << "}";)"_indent_4);
         fmt::print(source, R"(
-                out << "}}";
-            }})"_indent_0_drop_1);
+                out << "}";
+            })"_indent_0_remove_first_line);
         fmt::print(source, "\n");
     }
 
-    fmt::print(header, "}};\n\n");
+    fmt::print(header, "};\n\n"_indent_0);
 }
 
 /**

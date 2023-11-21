@@ -151,8 +151,7 @@ if(hasParent)
     set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
 endif()
 
-# Main tree-gen library in shared or static form as managed by cmake's
-# internal BUILD_SHARED_LIBS variable.
+# Main tree-gen library in shared or static form as managed by CMake's internal BUILD_SHARED_LIBS variable.
 add_library(tree-lib $<TARGET_OBJECTS:tree-lib-obj>)
 target_include_directories(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRARIES>)
