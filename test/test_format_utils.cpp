@@ -1,6 +1,6 @@
 #include "format_utils.hpp"
 
-#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace tree_gen::cpp;
 
