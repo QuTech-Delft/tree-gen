@@ -290,7 +290,6 @@ endfunction()
 if(TREE_GEN_BUILD_TESTS)
     enable_testing()
     include(CTest)
-    include(GoogleTest)
     set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
     # Include the directories containing test.
