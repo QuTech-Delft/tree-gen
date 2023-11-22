@@ -1,18 +1,20 @@
-#include <iostream>
-#include <cstdio>
-#include <stdexcept>
 #include "../utils.hpp"
+
+#include <cstdio>
+#include <iostream>
+#include <sstream>  // ostringstream
+#include <stdexcept>
 
 // Include the generated files.
 #include "value.hpp"
 #include "program.hpp"
+
 
 // Note: the // comment contents of main(), together with the MARKER lines and
 // the output of the program, are used to automatically turn this into a
 // restructured-text page for ReadTheDocs.
 
 int main() {
-
     // *******************
     // Interpreter example
     // *******************
@@ -70,7 +72,8 @@ int main() {
 
     // To create a new node, instead of using ``tree::base::make``,
     // you use the ``new`` keyword directly.
-    node_type n1, n2;
+    node_type n1{};
+    node_type n2{};
     n1.lit = new value::Literal(2);
     n2.ref = new value::Reference("x");
     MARKER
@@ -83,12 +86,12 @@ int main() {
     // or ``Many::add_raw()``. These functions take ownership of a new-allocated
     // raw pointer to a node - exactly what we need here. Note that because they
     // take ownership, you don't have to (and shouldn't!) delete manually.
-    node_type n3;
+    node_type n3{};
     n3.asgn = new program::Assignment();
     n3.asgn->rhs.set_raw(n1.lit);
     n3.asgn->lhs.set_raw(n2.ref);
 
-    node_type n4;
+    node_type n4{};
     n4.prog = new program::Program();
     n4.prog->statements.add_raw(n3.asgn);
     MARKER
@@ -139,7 +142,7 @@ int main() {
     // always indicate that they're not well-formed.
     auto err_stmt = tree::base::make<program::ErroneousStatement>();
     ASSERT_RAISES(tree::base::NotWellFormed, err_stmt.check_well_formed());
-    MARKER;
+    MARKER
 
     // Line number information (and annotations in general)
     // ----------------------------------------------------
@@ -190,7 +193,15 @@ int main() {
     MARKER
 
     // Testing the JSON dump
-    tree->dump_json();
+    std::ostringstream oss{};
+    tree->dump_json(oss);
+    ASSERT(oss.str() ==
+        R"({"Program":{"variables":"[]","statements":[{"Assignment":{"lhs":{"Reference":{"n)"
+        R"(ame":"x","target":"!MISSING","source_location":"test:1:1"}},"rhs":{"Literal":{"v)"
+        R"(alue":"2","source_location":"test:1:5"}},"source_location":"test:1:1"}}],"source)"
+        R"(_location":"test:1:1"}})"
+    );
+    std::printf("%s", oss.str().c_str());
     std::printf("\n");
     MARKER
 
@@ -206,7 +217,7 @@ int main() {
     // ``tree::annotatable::Serializable``, this doesn't work automagically.
     auto node = tree::base::make<value::Literal>(2);
     node->set_annotation(primitives::SourceLocation("test", 1, 1));
-    std::string cbor = tree::base::serialize(node);
+    std::string cbor = tree::base::serialize(tree::base::Maybe<value::Literal>{ node.get_ptr() });
     auto node2 = tree::base::deserialize<value::Literal>(cbor);
     ASSERT(!node2->has_annotation<primitives::SourceLocation>());
 
@@ -215,7 +226,7 @@ int main() {
     // ``tree::annotatable::serdes_registry`` singleton. After that, it will
     // work.
     tree::annotatable::serdes_registry.add<primitives::SourceLocation>("loc");
-    cbor = tree::base::serialize(node);
+    cbor = tree::base::serialize(tree::base::Maybe<value::Literal>{ node.get_ptr() });
     node2 = tree::base::deserialize<value::Literal>(cbor);
     ASSERT(node2->has_annotation<primitives::SourceLocation>());
     MARKER

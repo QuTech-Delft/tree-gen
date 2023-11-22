@@ -1,7 +1,8 @@
-#include <sstream>
-#include <cstdio>
 #include "tree-cbor.hpp"
-#include "assert.hpp"
+
+#include <gtest/gtest.h>
+#include <sstream>
+
 
 // Some valid CBOR to test decoding with:
 const uint8_t TEST_CBOR[] = {
@@ -49,58 +50,58 @@ const uint8_t TEST_CBOR[] = {
                 0x64                                                // "d"
 };
 
-int main() {
 
+TEST(cbor, main) {
     // Basic test for the reader using known-good CBOR.
     auto reader = tree::cbor::Reader(std::string((const char*)TEST_CBOR, sizeof(TEST_CBOR)));
-    CHECK(reader.is_array());
+    EXPECT_TRUE(reader.is_array());
     auto ar = reader.as_array();
-    CHECK_EQ(ar.size(), 9u);
-    CHECK(ar.at(0).is_null());
+    EXPECT_EQ(ar.size(), 9u);
+    EXPECT_TRUE(ar.at(0).is_null());
     ar.at(0).as_null();
-    CHECK(ar.at(1).is_bool());
-    CHECK(!ar.at(1).as_bool());
-    CHECK(ar.at(2).is_bool());
-    CHECK(ar.at(2).as_bool());
-    CHECK(ar.at(3).is_array());
+    EXPECT_TRUE(ar.at(1).is_bool());
+    EXPECT_TRUE(!ar.at(1).as_bool());
+    EXPECT_TRUE(ar.at(2).is_bool());
+    EXPECT_TRUE(ar.at(2).as_bool());
+    EXPECT_TRUE(ar.at(3).is_array());
     auto ar2 = ar.at(3).as_array();
-    CHECK_EQ(ar2.size(), 11u);
-    CHECK(ar2.at(0).is_int());
-    CHECK_EQ(ar2.at(0).as_int(), 0);
-    CHECK_EQ(ar2.at(1).as_int(), 1);
-    CHECK_EQ(ar2.at(2).as_int(), 23);
-    CHECK_EQ(ar2.at(3).as_int(), 24);
-    CHECK_EQ(ar2.at(4).as_int(), 255);
-    CHECK_EQ(ar2.at(5).as_int(), 256);
-    CHECK_EQ(ar2.at(6).as_int(), 65535);
-    CHECK_EQ(ar2.at(7).as_int(), 65536);
-    CHECK_EQ(ar2.at(8).as_int(), 4294967295);
-    CHECK_EQ(ar2.at(9).as_int(), 4294967296);
-    CHECK_EQ(ar2.at(10).as_int(), 9223372036854775807);
+    EXPECT_EQ(ar2.size(), 11u);
+    EXPECT_TRUE(ar2.at(0).is_int());
+    EXPECT_EQ(ar2.at(0).as_int(), 0);
+    EXPECT_EQ(ar2.at(1).as_int(), 1);
+    EXPECT_EQ(ar2.at(2).as_int(), 23);
+    EXPECT_EQ(ar2.at(3).as_int(), 24);
+    EXPECT_EQ(ar2.at(4).as_int(), 255);
+    EXPECT_EQ(ar2.at(5).as_int(), 256);
+    EXPECT_EQ(ar2.at(6).as_int(), 65535);
+    EXPECT_EQ(ar2.at(7).as_int(), 65536);
+    EXPECT_EQ(ar2.at(8).as_int(), 4294967295);
+    EXPECT_EQ(ar2.at(9).as_int(), 4294967296);
+    EXPECT_EQ(ar2.at(10).as_int(), 9223372036854775807);
     auto ar3 = ar.at(4).as_array();
-    CHECK_EQ(ar3.size(), 10u);
-    CHECK(ar3.at(0).is_int());
-    CHECK_EQ(ar3.at(0).as_int(), -1);
-    CHECK_EQ(ar3.at(1).as_int(), -24);
-    CHECK_EQ(ar3.at(2).as_int(), -25);
-    CHECK_EQ(ar3.at(3).as_int(), -256);
-    CHECK_EQ(ar3.at(4).as_int(), -257);
-    CHECK_EQ(ar3.at(5).as_int(), -65536);
-    CHECK_EQ(ar3.at(6).as_int(), -65537);
-    CHECK_EQ(ar3.at(7).as_int(), -4294967296);
-    CHECK_EQ(ar3.at(8).as_int(), -4294967297);
-    CHECK_EQ(ar3.at(9).as_int(), -9223372036854775807 - 1);
-    CHECK(ar.at(5).is_float());
-    CHECK_EQ(ar.at(5).as_float(), 3.14159265359);
-    CHECK(ar.at(6).is_string());
-    CHECK_EQ(ar.at(6).as_string(), "hello");
-    CHECK(ar.at(7).is_binary());
-    CHECK_EQ(ar.at(7).as_binary(), "world");
-    CHECK(ar.at(8).is_map());
+    EXPECT_EQ(ar3.size(), 10u);
+    EXPECT_TRUE(ar3.at(0).is_int());
+    EXPECT_EQ(ar3.at(0).as_int(), -1);
+    EXPECT_EQ(ar3.at(1).as_int(), -24);
+    EXPECT_EQ(ar3.at(2).as_int(), -25);
+    EXPECT_EQ(ar3.at(3).as_int(), -256);
+    EXPECT_EQ(ar3.at(4).as_int(), -257);
+    EXPECT_EQ(ar3.at(5).as_int(), -65536);
+    EXPECT_EQ(ar3.at(6).as_int(), -65537);
+    EXPECT_EQ(ar3.at(7).as_int(), -4294967296);
+    EXPECT_EQ(ar3.at(8).as_int(), -4294967297);
+    EXPECT_EQ(ar3.at(9).as_int(), -9223372036854775807 - 1);
+    EXPECT_TRUE(ar.at(5).is_float());
+    EXPECT_EQ(ar.at(5).as_float(), 3.14159265359);
+    EXPECT_TRUE(ar.at(6).is_string());
+    EXPECT_EQ(ar.at(6).as_string(), "hello");
+    EXPECT_TRUE(ar.at(7).is_binary());
+    EXPECT_EQ(ar.at(7).as_binary(), "world");
+    EXPECT_TRUE(ar.at(8).is_map());
     auto map = ar.at(8).as_map();
-    CHECK_EQ(map.size(), 2u);
-    CHECK_EQ(map.at("a").as_string(), "b");
-    CHECK_EQ(map.at("c").as_string(), "d");
+    EXPECT_EQ(map.size(), 2u);
+    EXPECT_EQ(map.at("a").as_string(), "b");
+    EXPECT_EQ(map.at("c").as_string(), "d");
 
     // Basic test for the writer.
     std::ostringstream ss;
@@ -135,26 +136,25 @@ int main() {
     // Test the writer using our own reader.
     auto reader2 = tree::cbor::Reader(encoded);
     auto map2 = reader2.as_map();
-    CHECK_EQ(map2.size(), 7u);
+    EXPECT_EQ(map2.size(), 7u);
     map2.at("null").as_null();
-    CHECK_EQ(map2.at("false").as_bool(), false);
-    CHECK_EQ(map2.at("true").as_bool(), true);
+    EXPECT_EQ(map2.at("false").as_bool(), false);
+    EXPECT_EQ(map2.at("true").as_bool(), true);
     auto ar4 = map2.at("int-array").as_array();
-    CHECK_EQ(ar4.size(), 10u);
-    CHECK_EQ(ar4.at(0).as_int(), 0x3);
-    CHECK_EQ(ar4.at(1).as_int(), 0x34);
-    CHECK_EQ(ar4.at(2).as_int(), 0x3456);
-    CHECK_EQ(ar4.at(3).as_int(), 0x3456789A);
-    CHECK_EQ(ar4.at(4).as_int(), 0x3456789ABCDEF012);
-    CHECK_EQ(ar4.at(5).as_int(), -0x3);
-    CHECK_EQ(ar4.at(6).as_int(), -0x34);
-    CHECK_EQ(ar4.at(7).as_int(), -0x3456);
-    CHECK_EQ(ar4.at(8).as_int(), -0x3456789A);
-    CHECK_EQ(ar4.at(9).as_int(), -0x3456789ABCDEF012);
-    CHECK_EQ(map2.at("pi").as_float(), 3.14159265359);
-    CHECK_EQ(map2.at("string").as_string(), "hello");
-    CHECK_EQ(map2.at("binary").as_binary(), "world");
+    EXPECT_EQ(ar4.size(), 10u);
+    EXPECT_EQ(ar4.at(0).as_int(), 0x3);
+    EXPECT_EQ(ar4.at(1).as_int(), 0x34);
+    EXPECT_EQ(ar4.at(2).as_int(), 0x3456);
+    EXPECT_EQ(ar4.at(3).as_int(), 0x3456789A);
+    EXPECT_EQ(ar4.at(4).as_int(), 0x3456789ABCDEF012);
+    EXPECT_EQ(ar4.at(5).as_int(), -0x3);
+    EXPECT_EQ(ar4.at(6).as_int(), -0x34);
+    EXPECT_EQ(ar4.at(7).as_int(), -0x3456);
+    EXPECT_EQ(ar4.at(8).as_int(), -0x3456789A);
+    EXPECT_EQ(ar4.at(9).as_int(), -0x3456789ABCDEF012);
+    EXPECT_EQ(map2.at("pi").as_float(), 3.14159265359);
+    EXPECT_EQ(map2.at("string").as_string(), "hello");
+    EXPECT_EQ(map2.at("binary").as_binary(), "world");
 
     std::cout << "Test passed" << std::endl;
-    return 0;
 }

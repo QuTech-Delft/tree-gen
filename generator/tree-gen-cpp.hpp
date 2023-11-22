@@ -7,12 +7,14 @@
 
 #include "tree-gen.hpp"
 
-namespace tree_gen {
+#include <string>
+#include <string_view>
+
 
 /**
  * Namespace for C++ code generation.
  */
-namespace cpp {
+namespace tree_gen::cpp {
 
 /**
  * Generate the complete C++ code (source and header).
@@ -23,7 +25,6 @@ void generate(
     Specification &specification
 );
 
-} // namespace cpp
-} // namespace tree_gen
+} // namespace tree_gen::cpp
 
 #endif

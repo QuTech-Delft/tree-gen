@@ -1,17 +1,19 @@
-#include <iostream>
-#include <cstdio>
-#include <stdexcept>
 #include "../utils.hpp"
+
+#include <cstdio>
+#include <iostream>
+#include <sstream>  // ostringstream
+#include <stdexcept>
 
 // Include the generated file.
 #include "directory.hpp"
+
 
 // Note: the // comment contents of main(), together with the MARKER lines and
 // the output of the program, are used to automatically turn this into a
 // restructured-text page for ReadTheDocs.
 
 int main() {
-
     // **********************
     // Directory tree example
     // **********************
@@ -221,7 +223,7 @@ int main() {
 
     // Now that we have a nice tree, let's try the serialization and
     // deserialization functionality. Serializing is easy:
-    std::string cbor = tree::base::serialize(system);
+    std::string cbor = tree::base::serialize(tree::base::Maybe<directory::System>{ system });
     MARKER
 
     // Let's write it to a file; we'll load this in Python later.
@@ -256,7 +258,26 @@ int main() {
     MARKER
 
     // Testing the JSON dump
-    system2->dump_json();
+    std::ostringstream oss{};
+    system2->dump_json(oss);
+    ASSERT(oss.str() ==
+        R"({"System":{"drives":[{"Drive":{"letter":"C","root_dir":{"Directory":{"entries":[)"
+        R"({"Directory":{"entries":"[]","name":"Program Files"}},{"Directory":{"entries":"[)"
+        R"(]","name":"Windows"}},{"Directory":{"entries":"[]","name":"Users"}},{"File":{"co)"
+        R"(ntents":"lots of hibernation data","name":"hiberfil.sys"}},{"File":{"contents":")"
+        R"(lots of page file data","name":"pagefile.sys"}},{"File":{"contents":"lots of swa)"
+        R"(p data","name":"swapfile.sys"}},{"Mount":{"target":{"Directory":{"entries":[{"Mo)"
+        R"(unt":{"target":"...","name":"evil link to C:"}}],"name":""}},"name":"SomeUser"}})"
+        R"(],"name":""}}}},{"Drive":{"letter":"D","root_dir":{"Directory":{"entries":[{"Mou)"
+        R"(nt":{"target":{"Directory":{"entries":[{"Directory":{"entries":"[]","name":"Prog)"
+        R"(ram Files"}},{"Directory":{"entries":"[]","name":"Windows"}},{"Directory":{"entr)"
+        R"(ies":"[]","name":"Users"}},{"File":{"contents":"lots of hibernation data","name")"
+        R"(:"hiberfil.sys"}},{"File":{"contents":"lots of page file data","name":"pagefile.)"
+        R"(sys"}},{"File":{"contents":"lots of swap data","name":"swapfile.sys"}},{"Mount":)"
+        R"({"target":"...","name":"SomeUser"}}],"name":""}},"name":"evil link to C:"}}],"na)"
+        R"(me":""}}}}]}})"
+    );
+    std::printf("%s", oss.str().c_str());
     std::printf("\n");
     MARKER
 
@@ -268,7 +289,7 @@ int main() {
 
     // To be sure no data was lost, we'll have to check the CBOR and debug dumps
     // instead.
-    ASSERT(tree::base::serialize(system) == tree::base::serialize(system2));
+    ASSERT(tree::base::serialize(tree::base::Maybe<directory::System>{ system }) == tree::base::serialize(system2));
     std::ostringstream ss1{};
     system->dump(ss1);
     std::ostringstream ss2{};

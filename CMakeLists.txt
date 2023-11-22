@@ -71,7 +71,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Everything needs C++11 support.
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -103,6 +103,16 @@ if(NOT fmt_FOUND)
     FetchContent_MakeAvailable(fmt)
 endif()
 
+# range-v3
+find_package(range-v3)
+if(NOT range-v3_FOUND)
+    FetchContent_Declare(range-v3
+        GIT_REPOSITORY https://github.com/ericniebler/range-v3
+        GIT_TAG "a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
+    )
+    FetchContent_MakeAvailable(range-v3)
+endif()
+
 
 #=============================================================================#
 # tree-lib support library target                                             #
@@ -129,6 +139,7 @@ target_include_directories(
 )
 target_link_libraries(tree-lib-obj
     PRIVATE fmt::fmt
+    PRIVATE range-v3::range-v3
 )
 
 # Set variables at possible parent projects.
@@ -140,8 +151,7 @@ if(hasParent)
     set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
 endif()
 
-# Main tree-gen library in shared or static form as managed by cmake's
-# internal BUILD_SHARED_LIBS variable.
+# Main tree-gen library in shared or static form as managed by CMake's internal BUILD_SHARED_LIBS variable.
 add_library(tree-lib $<TARGET_OBJECTS:tree-lib-obj>)
 target_include_directories(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRARIES>)
@@ -185,6 +195,7 @@ add_executable(
     tree-gen
     ${BISON_tree-gen-parser_OUTPUTS}
     ${FLEX_tree-gen-lexer_OUTPUTS}
+    "${CMAKE_CURRENT_SOURCE_DIR}/generator/format_utils.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-cpp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-python.cpp"
@@ -198,6 +209,7 @@ target_include_directories(
 
 target_link_libraries(tree-gen
     PRIVATE fmt::fmt
+    PRIVATE range-v3::range-v3
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -276,11 +288,12 @@ endfunction()
 # Include the tests directory if requested.
 if(TREE_GEN_BUILD_TESTS)
     enable_testing()
+    include(CTest)
+    set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
-    # Include the directories containing tests.
-    add_subdirectory(tests)
+    # Include the directories containing test.
+    add_subdirectory(test)
     add_subdirectory(examples)
-
 endif()
 
 
