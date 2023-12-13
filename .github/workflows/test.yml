@@ -16,16 +16,22 @@ jobs:
         build_type:
           - Debug
           - Release
-        compiler:
+        cxx_compiler:
           - clang++
           - g++
+        include:
+          - c_compiler: clang
+            cxx_compiler: clang++
+          - c_compiler: gcc
+            cxx_compiler: g++
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          compiler: ${{ matrix.compiler }}
+          c_compiler: ${{ matrix.c_compiler }}
+          cxx_compiler: ${{ matrix.cxx_compiler }}
           shell: bash
 
   cpp-macos-x64:
@@ -48,7 +54,8 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          compiler: clang++
+          c_compiler: clang
+          cxx_compiler: clang++
           shell: bash
 
   cpp-windows-x64:
@@ -75,7 +82,8 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          compiler: msvc
+          c_compiler: msvc
+          cxx_compiler: msvc
           shell: bash
 
   cpp-linux-arm64:
@@ -95,7 +103,8 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: Release
-          compiler: g++
+          c_compiler: gcc
+          cxx_compiler: g++
           shell: bash
 
   cpp-macos-arm64:
@@ -113,7 +122,8 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: Release
-          compiler: clang++
+          c_compiler: clang
+          cxx_compiler: clang++
           shell: bash
 
   complete:

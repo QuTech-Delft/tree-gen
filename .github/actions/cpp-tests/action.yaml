@@ -4,9 +4,12 @@ inputs:
   build_type:
     required: true
     description: Is the build a debug or release version
-  compiler:
+  c_compiler:
     required: true
-    description: Which compiler to use
+    description: Which C compiler to use
+  cxx_compiler:
+    required: true
+    description: Which C++ compiler to use
   shell:
     required: true
     description: Which shell to use for the `run` command
@@ -17,7 +20,7 @@ runs:
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Configure
-      run: cmake . -DTREE_GEN_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ inputs.compiler }}
+      run: cmake . -DTREE_GEN_BUILD_TESTS=ON -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} -DCMAKE_CXX_COMPILER=${{ inputs.cxx_compiler }}
       shell: ${{ inputs.shell }}
     - name: Build
       run: cmake --build . --parallel
