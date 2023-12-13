@@ -22,10 +22,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install bison and flex
-        run: |
-          apt-get update
-          apt-get install -y bison flex
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
