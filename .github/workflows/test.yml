@@ -7,43 +7,133 @@ on:
   pull_request:
 
 jobs:
-  cpp:
-    name: 'C++ tests and examples'
-    runs-on: ${{ matrix.os }}
+  cpp-linux-x64:
+    name: "C++ tests (gcc-clang/Linux/x64)"
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
+        build_type:
+          - Debug
+          - Release
+        compiler:
+          - clang++
+          - g++
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
-    - name: Install dependencies
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install bison flex
-        echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
-        echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
-    - uses: actions/cache@v3
-      if: matrix.os == 'windows-latest'
-      with:
-        path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
-        key: ${{ runner.os }}-chocolatey-cpp-0
-        restore-keys: |
-          ${{ runner.os }}-chocolatey-cpp-
-          ${{ runner.os }}-chocolatey-
-    - name: Install dependencies
-      if: matrix.os == 'windows-latest'
-      run: choco install winflexbison3 --version 2.5.18.20190508
-    - name: Configure
-      run: cmake . -DTREE_GEN_BUILD_TESTS=ON
-    - name: Build
-      run: cmake --build . --parallel
-    - name: Test
-      run: ctest -C Debug --output-on-failure
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install bison and flex
+        run: |
+          apt-get update
+          apt-get install -y bison flex
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          shell: bash
+
+  cpp-macos-x64:
+    name: "C++ tests (clang/MacOS/x64)"
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          brew install bison flex
+          echo "/usr/local/opt/bison/bin" >> $GITHUB_PATH
+          echo "/usr/local/opt/flex/bin" >> $GITHUB_PATH
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          shell: bash
+
+  cpp-windows-x64:
+    name: "C++ tests (msvc/Windows/x64)"
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/cache@v3
+        with:
+          path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
+          key: ${{ runner.os }}-chocolatey-cpp-0
+          restore-keys: |
+            ${{ runner.os }}-chocolatey-cpp-
+            ${{ runner.os }}-chocolatey-
+      - name: Install dependencies
+        run: choco install winflexbison3 --version 2.5.18.20190508
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: ${{ matrix.build_type }}
+          shell: bash
+
+  cpp-linux-arm64:
+    name: "C++ tests (gcc/Linux/ARM64)"
+    runs-on: [self-hosted, ARM64, Linux]
+    container: python:3.11
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Add Python symlink
+        run: ln -sf /usr/local/bin/python3.11 /usr/bin/python3
+        shell: bash
+      - name: Install bison and flex
+        run: |
+          apt-get update
+          apt-get install -y bison flex
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: Release
+          shell: bash
+
+  cpp-macos-arm64:
+    name: "C++ tests (clang/macos/ARM64)"
+    runs-on: [self-hosted, ARM64, macOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install bison and flex
+        run: |
+          brew install bison flex
+          echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
+          echo "$(brew --prefix flex)/bin" >> $GITHUB_PATH
+        shell: bash
+      - uses: ./.github/actions/cpp-tests
+        with:
+          build_type: Release
+          shell: bash
+
+  complete:
+    # see https://github.community/t/status-check-for-a-matrix-jobs/127354/7
+    name: Report status
+    needs:
+      - cpp-linux-x64
+      - cpp-macos-x64
+      - cpp-windows-x64
+      - cpp-linux-arm64
+      - cpp-macos-arm64
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all job status
+        # see https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#needs-context
+        # see https://stackoverflow.com/a/67532120/4907315
+        if: >-
+          ${{
+               contains(needs.*.result, 'failure')
+            || contains(needs.*.result, 'cancelled')
+            || contains(needs.*.result, 'skipped')
+          }}
+        run: exit 1
