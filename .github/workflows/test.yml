@@ -78,7 +78,7 @@ jobs:
             ${{ runner.os }}-chocolatey-cpp-
             ${{ runner.os }}-chocolatey-
       - name: Install dependencies
-        run: choco install winflexbison3 --version 2.5.18.20190508
+        run: choco install winflexbison3 --version 2.5.24.20210105
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
