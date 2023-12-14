@@ -20,7 +20,7 @@ runs:
     - name: Get latest CMake
       uses: lukka/get-cmake@latest
     - name: Configure
-      run: cmake . -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DTREE_GEN_BUILD_TESTS=ON -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} -DCMAKE_CXX_COMPILER=${{ inputs.cxx_compiler }}
+      run: cmake . -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} -DCMAKE_CXX_COMPILER=${{ inputs.cxx_compiler }} -DTREE_GEN_BUILD_TESTS=ON
       shell: ${{ inputs.shell }}
     - name: Build
       run: cmake --build . --parallel
