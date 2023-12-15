@@ -1,0 +1,30 @@
+name: Compile tree-gen
+description: Install tools and compile tree-gen
+inputs:
+  build_type:
+    required: true
+    description: Is the build a debug or release version
+  c_compiler:
+    required: true
+    description: Which C compiler to use
+  cxx_compiler:
+    required: true
+    description: Which C++ compiler to use
+  shell:
+    required: true
+    description: Which shell to use for the `run` command
+
+runs:
+  using: composite
+  steps:
+    - name: Get latest CMake
+      uses: lukka/get-cmake@latest
+    - name: Configure
+      run: cmake . -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} -DCMAKE_CXX_COMPILER=${{ inputs.cxx_compiler }} -DTREE_GEN_BUILD_TESTS=ON
+      shell: ${{ inputs.shell }}
+    - name: Build
+      run: cmake --build . --parallel
+      shell: ${{ inputs.shell }}
+    - name: Test
+      run: ctest -C ${{ inputs.build_type }} --output-on-failure
+      shell: ${{ inputs.shell }}
