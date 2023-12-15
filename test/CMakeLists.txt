@@ -32,7 +32,7 @@ target_include_directories(${PROJECT_NAME}_test PRIVATE
 
 # Target options
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
-    tree-lib
+    tree-gen-lib
     gtest
 )
 if(CMAKE_COMPILER_IS_GNUCXX)

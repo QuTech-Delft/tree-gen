@@ -1,0 +1,9 @@
+include(default)
+
+[settings]
+compiler.cppstd=17
+tree-gen/*:build_type=Debug
+
+[options]
+tree-gen/*:asan_enabled=False
+tree-gen/*:build_tests=False
