@@ -8,6 +8,34 @@ The tree is described using a simple and concise language, so all the repetitive
 This includes serialization and deserialization to [CBOR](https://cbor.io/),
 allowing easy interoperation between C++ and Python.
 
+## File organization
+
+ - `generator`: source and private header files for the generator program.
+ - `src`: source and private header files for the support library.
+ - `include`: public header files for the support library.
+ - `examples`: examples showing how to use `tree-gen`. These are also used as tests,
+   and their content and output is directly used to generate the ReadTheDocs documentation.
+ - `tests`: additional test cases for things internal to `tree-gen`.
+ - `doc`: documentation generation for ReadTheDocs.
+
+## Dependencies
+
+* C++ compiler with C++17 support (gcc 11, clang 14, msvc 17)
+* `CMake` >= 3.12
+* `git`
+* `Python` 3.x plus `pip`, with the following package:
+  * `conan` >= 2.0
+  
+### ARM specific dependencies
+
+We are having problems when using the `m4` and `zulu-opendjk` Conan packages on an ARMv8 architecture.
+`m4` is required by Flex/Bison and `zulu-openjdk` provides the Java JRE required by the ANTLR generator.
+So, for the time being, we are installing Flex/Bison and Java manually for this platform.
+
+* `Flex` >= 2.6.4
+* `Bison` >= 3.0
+* `Java JRE` >= 11
+
 ## Usage and "installation"
 
 `tree-gen` is a very lightweight tool,
@@ -29,43 +57,19 @@ generate_tree_py(
 )
 
 # To add generated-source-file.cpp to your program:
-add_executable/add_library(
-    my-software
+add_executable/add_library(my-software
     "${CMAKE_CURRENT_BINARY_DIR}/generated-source-file.cpp"
 )
 
 # To add generated-header-file.hpp to the search path:
-target_include_directories(
-    my-software
+target_include_directories(my-software
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 # To use tree-gen's support library (you could substitute your own if you feel up to the task):
-target_link_libraries(my-software tree-lib)
+target_link_libraries(my-software tree-gen-lib)
 ```
 
 and CMake *Should*™ handle everything for you.
 
-`tree-gen` does have some dependencies:
-
- - A compiler with C++11 support (MSVC, GCC, and Clang are tested in CI)
- - Flex 2.6.1+
- - Bison 3.0+
-
-If you're on a POSIX system and Flex/Bison are too old or not installed,
-the buildsystem will attempt to download and build them from source for you.
-
 For usage information beyond this, [Read The Docs](https://tree-gen.readthedocs.io/).
-
-## Project structure
-
- - `generator`: source and private header files for the generator program.
- - `src`: source and private header files for the support library.
- - `include`: public header files for the support library.
- - `cmake`: contains CMake helper modules for building flex/bison from source
-   if they are not installed.
- - `examples`: examples showing how to use `tree-gen`. These are also used as
-   tests, and their content and output is directly used to generate the
-   ReadTheDocs documentation.
- - `tests`: additional test cases for things internal to `tree-gen`.
- - `doc`: documentation generation for ReadTheDocs.

@@ -13,6 +13,9 @@ if(NOT TARGET tree-gen)
 # Loads up the appropriate directories for installing stuff.
 include(GNUInstallDirs)
 
+# Include the generate_tree functions
+include(cmake/generate_tree.cmake)
+
 
 #=============================================================================#
 # Configuration options                                                       #
@@ -70,7 +73,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Everything needs C++11 support.
+# Everything needs C++17 support.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -86,12 +89,15 @@ SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 #=============================================================================#
 include(FetchContent)
 
-# Require flex/bison; if not installed, this will try to build from source.
-set(FLEX_VERSION_REQUIRED 2.6.1)
-set(BISON_VERSION_REQUIRED 3.0)
-set(BISON_VERSION_TO_BUILD 3.8)
-include(cmake/flex-bison.cmake)
+find_package(BISON 3.0)
+find_package(FLEX 2.6.4)
+if(WIN32)
+    set(flex_win_compat --wincompat)
+else()
+    set(flex_win_compat)
+endif()
 
+# fmt
 set(fmt_VERSION_REQUIRED 10.1.1)
 find_package(fmt ${fmt_VERSION_REQUIRED})
 if(NOT fmt_FOUND)
@@ -115,29 +121,33 @@ endif()
 
 
 #=============================================================================#
-# tree-lib support library target                                             #
+# tree-gen-lib support library target                                         #
 #=============================================================================#
 
 # Create the library.
-set(TREE_LIB_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp")
-add_library(tree-lib-obj OBJECT ${TREE_LIB_SRCS})
-set_property(TARGET tree-lib-obj PROPERTY POSITION_INDEPENDENT_CODE ON)
+set(TREE_GEN_LIB_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp")
+add_library(tree-gen-lib-obj OBJECT
+    ${TREE_GEN_LIB_SRCS}
+)
+set_target_properties(tree-gen-lib-obj
+    PROPERTIES POSITION_INDEPENDENT_CODE ON
+)
 
-# tree-lib has a global, which (thanks to MSVC declspec nonsense) requires a
+# tree-gen-lib has a global, which (thanks to MSVC declspec nonsense) requires a
 # header file to be different when the library is compiled compared to when it
 # is used.
-set(TREE_LIB_PRIVATE_DEFS BUILDING_TREE_LIB)
-target_compile_definitions(tree-lib-obj PRIVATE ${TREE_LIB_PRIVATE_DEFS})
+set(TREE_GEN_LIB_PRIVATE_DEFS BUILDING_TREE_GEN_LIB)
+target_compile_definitions(tree-gen-lib-obj PRIVATE ${TREE_GEN_LIB_PRIVATE_DEFS})
 
 # Add the appropriate include paths.
-set(TREE_LIB_PRIVATE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/")
-set(TREE_LIB_PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+set(TREE_GEN_LIB_PRIVATE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/src/")
+set(TREE_GEN_LIB_PUBLIC_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 target_include_directories(
-    tree-lib-obj
-    PRIVATE ${TREE_LIB_PRIVATE_INCLUDE}
-    PUBLIC ${TREE_LIB_PUBLIC_INCLUDE}
+    tree-gen-lib-obj
+    PRIVATE ${TREE_GEN_LIB_PRIVATE_INCLUDE}
+    PUBLIC ${TREE_GEN_LIB_PUBLIC_INCLUDE}
 )
-target_link_libraries(tree-lib-obj
+target_link_libraries(tree-gen-lib-obj
     PRIVATE fmt::fmt
     PRIVATE range-v3::range-v3
 )
@@ -145,16 +155,40 @@ target_link_libraries(tree-lib-obj
 # Set variables at possible parent projects.
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
-    set(TREE_LIB_SRCS ${TREE_LIB_SRCS} PARENT_SCOPE)
-    set(TREE_LIB_PRIVATE_DEFS ${TREE_LIB_PRIVATE_DEFS} PARENT_SCOPE)
-    set(TREE_LIB_PRIVATE_INCLUDE ${TREE_LIB_PRIVATE_INCLUDE} PARENT_SCOPE)
-    set(TREE_LIB_PUBLIC_INCLUDE ${TREE_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
+    set(TREE_GEN_LIB_SRCS ${TREE_GEN_LIB_SRCS} PARENT_SCOPE)
+    set(TREE_GEN_LIB_PRIVATE_DEFS ${TREE_GEN_LIB_PRIVATE_DEFS} PARENT_SCOPE)
+    set(TREE_GEN_LIB_PRIVATE_INCLUDE ${TREE_GEN_LIB_PRIVATE_INCLUDE} PARENT_SCOPE)
+    set(TREE_GEN_LIB_PUBLIC_INCLUDE ${TREE_GEN_LIB_PUBLIC_INCLUDE} PARENT_SCOPE)
 endif()
 
 # Main tree-gen library in shared or static form as managed by CMake's internal BUILD_SHARED_LIBS variable.
-add_library(tree-lib $<TARGET_OBJECTS:tree-lib-obj>)
-target_include_directories(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRARIES>)
+add_library(tree-gen-lib
+    $<TARGET_OBJECTS:tree-gen-lib-obj>
+)
+target_include_directories(tree-gen-lib PUBLIC
+    $<TARGET_PROPERTY:tree-gen-lib-obj,INTERFACE_INCLUDE_DIRECTORIES>
+)
+target_link_libraries(tree-gen-lib PUBLIC
+    $<TARGET_PROPERTY:tree-gen-lib-obj,LINK_LIBRARIES>
+)
+set_target_properties(tree-gen-lib
+    PROPERTIES OUTPUT_NAME "tree-gen"
+)
+
+# Address sanitizer
+if(ASAN_ENABLED)
+    if(MSVC AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+        string(REGEX REPLACE "/RTC(su|[1su])" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+        message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n")
+
+        # /MTd is needed to link clang_rt.asan-i386.lib statically
+        # Otherwise the path to clang_rt.asan-i386.dll should be provided
+        add_compile_options(/fsanitize=address /MTd)
+    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+        add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address,undefined)
+    endif()
+endif()
 
 
 #=============================================================================#
@@ -162,11 +196,6 @@ target_link_libraries(tree-lib PUBLIC $<TARGET_PROPERTY:tree-lib-obj,LINK_LIBRAR
 #=============================================================================#
 
 # Generate the lexer.
-if(WIN32)
-    set(flex_win_compat --wincompat)
-else()
-    set(flex_win_compat)
-endif()
 flex_target(
     tree-gen-lexer
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/lexer.l"
@@ -191,8 +220,7 @@ add_flex_bison_dependency(
 )
 
 # Add rules for the tree-gen executable.
-add_executable(
-    tree-gen
+add_executable(tree-gen
     ${BISON_tree-gen-parser_OUTPUTS}
     ${FLEX_tree-gen-lexer_OUTPUTS}
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/format_utils.cpp"
@@ -201,8 +229,7 @@ add_executable(
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-python.cpp"
 )
 
-target_include_directories(
-    tree-gen
+target_include_directories(tree-gen
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/generator"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
@@ -240,58 +267,17 @@ else()
     message(SEND_ERROR "Unknown compiler!")
 endif()
 
-# Utility function for generating a C++-only tree with tree-gen.
-function(generate_tree TREE HDR SRC)
-    # Get the directory for the header file and make sure it exists.
-    get_filename_component(HDR_DIR "${HDR}" PATH)
-    file(MAKE_DIRECTORY "${HDR_DIR}")
-
-    # Get the directory for the source file and make sure it exists.
-    get_filename_component(SRC_DIR "${SRC}" PATH)
-    file(MAKE_DIRECTORY "${SRC_DIR}")
-
-    # Add a command to do the generation.
-    add_custom_command(
-        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}"
-        OUTPUT "${HDR}" "${SRC}"
-        DEPENDS "${TREE}" tree-gen
-    )
-endfunction()
-
-# Utility function for generating a C++ and Python tree with tree-gen.
-function(generate_tree_py TREE HDR SRC PY)
-    # Get the directory for the header file and make sure it exists.
-    get_filename_component(HDR_DIR "${HDR}" PATH)
-    file(MAKE_DIRECTORY "${HDR_DIR}")
-
-    # Get the directory for the source file and make sure it exists.
-    get_filename_component(SRC_DIR "${SRC}" PATH)
-    file(MAKE_DIRECTORY "${SRC_DIR}")
-
-    # Get the directory for the python file and make sure it exists.
-    get_filename_component(PY_DIR "${PY}" PATH)
-    file(MAKE_DIRECTORY "${PY_DIR}")
-
-    # Add a command to do the generation.
-    add_custom_command(
-        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}" "${PY}"
-        OUTPUT "${HDR}" "${SRC}" "${PY}"
-        DEPENDS "${TREE}" tree-gen
-    )
-endfunction()
-
 
 #=============================================================================#
 # Testing                                                                     #
 #=============================================================================#
 
-# Include the tests directory if requested.
+# Include the tests directory if requested
 if(TREE_GEN_BUILD_TESTS)
     enable_testing()
     include(CTest)
     set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
-    # Include the directories containing test.
     add_subdirectory(test)
     add_subdirectory(examples)
 endif()
@@ -303,12 +289,12 @@ endif()
 
 # Install the support library.
 install(
-    TARGETS tree-lib
+    TARGETS tree-gen-lib
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
 install(
-    DIRECTORY "$<TARGET_PROPERTY:tree-lib,INTERFACE_INCLUDE_DIRECTORIES>"
+    DIRECTORY "$<TARGET_PROPERTY:tree-gen-lib,INTERFACE_INCLUDE_DIRECTORIES>"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )

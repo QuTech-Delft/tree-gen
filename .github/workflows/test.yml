@@ -16,22 +16,16 @@ jobs:
         build_type:
           - Debug
           - Release
-        cxx_compiler:
-          - clang++
-          - g++
-        include:
-          - c_compiler: clang
-            cxx_compiler: clang++
-          - c_compiler: gcc
-            cxx_compiler: g++
+        compiler:
+          - clang
+          - gcc
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          c_compiler: ${{ matrix.c_compiler }}
-          cxx_compiler: ${{ matrix.cxx_compiler }}
+          conan_profile: tests-${{ matrix.build_type }}-${{ matrix.compiler }}-linux-x64
           shell: bash
 
   cpp-macos-x64:
@@ -54,8 +48,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          c_compiler: clang
-          cxx_compiler: clang++
+          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-x64
           shell: bash
 
   cpp-windows-x64:
@@ -81,8 +74,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: ${{ matrix.build_type }}
-          c_compiler: msvc
-          cxx_compiler: msvc
+          conan_profile: tests-${{ matrix.build_type }}-msvc-windows-x64
           shell: bash
 
   cpp-linux-arm64:
@@ -108,8 +100,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: Release
-          c_compiler: gcc
-          cxx_compiler: g++
+          conan_profile: tests-${{ matrix.build_type }}-gcc-linux-arm64
           shell: bash
 
   cpp-macos-arm64:
@@ -133,8 +124,7 @@ jobs:
       - uses: ./.github/actions/cpp-tests
         with:
           build_type: Release
-          c_compiler: clang
-          cxx_compiler: clang++
+          conan_profile: tests-${{ matrix.build_type }}-apple_clang-macos-arm64
           shell: bash
 
   complete:
