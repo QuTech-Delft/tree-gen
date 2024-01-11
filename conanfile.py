@@ -10,7 +10,7 @@ from conan.tools.scm import Version
 from version import get_version
 
 
-class TreegenConan(ConanFile):
+class TreeGenConan(ConanFile):
     name = "tree-gen"
     version = get_version()
 
@@ -19,7 +19,7 @@ class TreegenConan(ConanFile):
     homepage = "https://github.com/QuTech-Delft/tree-gen"
     url = "https://github.com/conan-io/conan-center-index"
     description = "C++ and Python code generator for tree-like structures common in parser and compiler codebases."
-    topics = ("code generation")
+    topics = "code generation"
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
