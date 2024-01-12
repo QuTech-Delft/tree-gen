@@ -51,8 +51,8 @@ class TreeGenConan(ConanFile):
     def requirements(self):
         self.requires("fmt/10.1.1")
         self.requires("range-v3/0.12.0")
-        #if self.options.build_tests:
-        self.requires("gtest/1.14.0")
+        if self.options.build_tests:
+            self.requires("gtest/1.14.0")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -75,8 +75,8 @@ class TreeGenConan(ConanFile):
         self.cpp.build.libdirs = ["."]
 
     def generate(self):
-        #deps = CMakeDeps(self)
-        #deps.generate()
+        deps = CMakeDeps(self)
+        deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["ASAN_ENABLED"] = self.options.asan_enabled
         tc.variables["TREE_GEN_BUILD_TESTS"] = self.options.build_tests
