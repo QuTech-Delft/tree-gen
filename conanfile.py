@@ -10,7 +10,7 @@ from conan.tools.scm import Version
 from version import get_version
 
 
-class TreegenConan(ConanFile):
+class TreeGenConan(ConanFile):
     name = "tree-gen"
     version = get_version()
 
@@ -19,7 +19,7 @@ class TreegenConan(ConanFile):
     homepage = "https://github.com/QuTech-Delft/tree-gen"
     url = "https://github.com/conan-io/conan-center-index"
     description = "C++ and Python code generator for tree-like structures common in parser and compiler codebases."
-    topics = ("code generation")
+    topics = "code generation"
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
@@ -51,8 +51,8 @@ class TreegenConan(ConanFile):
     def requirements(self):
         self.requires("fmt/10.1.1")
         self.requires("range-v3/0.12.0")
-        if self.options.build_tests:
-            self.requires("gtest/1.14.0")
+        #if self.options.build_tests:
+        self.requires("gtest/1.14.0")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -75,8 +75,8 @@ class TreegenConan(ConanFile):
         self.cpp.build.libdirs = ["."]
 
     def generate(self):
-        deps = CMakeDeps(self)
-        deps.generate()
+        #deps = CMakeDeps(self)
+        #deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["ASAN_ENABLED"] = self.options.asan_enabled
         tc.variables["TREE_GEN_BUILD_TESTS"] = self.options.build_tests
