@@ -38,18 +38,21 @@ So, for the time being, we are installing Flex/Bison and Java manually for this 
 
 ## Usage and "installation"
 
-`tree-gen` is a very lightweight tool,
-intended to be compiled along with your project rather than to actually be installed.
-The assumption is that your main project will be written in C++ and that you're using CMake.
-If these assumptions are invalid, you'll have to do some extra work on your own. If they *are* valid,
-however, it should be really easy.
-Just include `tree-gen` as a submodule or copy it into your project, then do something like
+`tree-gen` is a very lightweight tool, intended to be requested as a Conan package from a C++ project.
+
+```python
+def requirements(self):
+    self.requires("tree-gen/1.0.2")
+```
+
+And then used something like:
 
 ```cmake
-add_subdirectory(tree-gen)
+find_program(TREE_GEN_EXECUTABLE tree-gen REQUIRED)
 
 # To generate the files from your tree description file:
 generate_tree_py(
+    "${TREE_GEN_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/input-tree-specification.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/generated-header-file.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/generated-source-file.cpp"
@@ -57,17 +60,12 @@ generate_tree_py(
 )
 
 # To add generated-source-file.cpp to your program:
-add_executable/add_library(my-software
-    "${CMAKE_CURRENT_BINARY_DIR}/generated-source-file.cpp"
-)
+add_executable/add_library(my-software "${CMAKE_CURRENT_BINARY_DIR}/generated-source-file.cpp")
 
 # To add generated-header-file.hpp to the search path:
-target_include_directories(my-software
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
-)
+target_include_directories(my-software PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
-# To use tree-gen's support library (you could substitute your own if you feel up to the task):
-target_link_libraries(my-software tree-gen-lib)
+target_link_libraries(my-software PRIVATE tree-gen::tree-gen)
 ```
 
 and CMake *Should*™ handle everything for you.
