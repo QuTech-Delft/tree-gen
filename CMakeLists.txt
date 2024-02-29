@@ -296,7 +296,7 @@ install(
 install(
     DIRECTORY "$<TARGET_PROPERTY:tree-gen-lib,INTERFACE_INCLUDE_DIRECTORIES>"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.hpp.inc"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.inc"
 )
 
 # Install the generator tool only if this is the toplevel project.
@@ -308,7 +308,7 @@ if (${CMAKE_PROJECT_NAME} STREQUAL tree-gen)
     install(
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.hpp.inc"
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.inc"
     )
 endif()
 
