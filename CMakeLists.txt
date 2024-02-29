@@ -288,8 +288,8 @@ endif()
 #=============================================================================#
 
 # Install the support library.
-install(
-    TARGETS tree-gen-lib
+install(TARGETS tree-gen-lib
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
@@ -301,8 +301,7 @@ install(
 
 # Install the generator tool only if this is the toplevel project.
 if (${CMAKE_PROJECT_NAME} STREQUAL tree-gen)
-    install(
-        TARGETS tree-gen
+    install(TARGETS tree-gen
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
     install(
