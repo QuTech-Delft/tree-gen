@@ -220,7 +220,7 @@ add_flex_bison_dependency(
 )
 
 # Add rules for the tree-gen executable.
-add_executable(tree-gen
+add_executable(tree-gen-exe
     ${BISON_tree-gen-parser_OUTPUTS}
     ${FLEX_tree-gen-lexer_OUTPUTS}
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/format_utils.cpp"
@@ -229,18 +229,18 @@ add_executable(tree-gen
     "${CMAKE_CURRENT_SOURCE_DIR}/generator/tree-gen-python.cpp"
 )
 
-target_include_directories(tree-gen
+target_include_directories(tree-gen-exe
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/generator"
     PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
-target_link_libraries(tree-gen
+target_link_libraries(tree-gen-exe
     PRIVATE fmt::fmt
     PRIVATE range-v3::range-v3
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(tree-gen PRIVATE
+    target_compile_options(tree-gen-exe PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
         -fPIC
         -Wno-error=deprecated-declarations
@@ -248,7 +248,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         -Wno-error=sign-compare
     )
 elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-    target_compile_options(tree-gen PRIVATE
+    target_compile_options(tree-gen-exe PRIVATE
         -Wall -Wextra -Werror -Wfatal-errors
         -fPIC
         -Wno-error=sign-compare
@@ -256,7 +256,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         -Wno-error=unused-but-set-variable
     )
 elseif(MSVC)
-    target_compile_options(tree-gen PRIVATE
+    target_compile_options(tree-gen-exe PRIVATE
         /W3 /w34996  # not using /WX at the moment because the flex generated code has some warnings
         /D_CRT_NONSTDC_NO_DEPRECATE
         /D_CRT_SECURE_NO_WARNINGS
@@ -296,19 +296,19 @@ install(
 install(
     DIRECTORY "$<TARGET_PROPERTY:tree-gen-lib,INTERFACE_INCLUDE_DIRECTORIES>"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.hpp.inc"
 )
 
 # Install the generator tool only if this is the toplevel project.
 if (${CMAKE_PROJECT_NAME} STREQUAL tree-gen)
     install(
-        TARGETS tree-gen
+        TARGETS tree-gen-exe
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
     install(
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING PATTERN "*.hpp"
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.hpp.inc"
     )
 endif()
 

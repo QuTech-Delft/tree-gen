@@ -3,13 +3,28 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 1.0.2 ] - [ 2024-02-29 ]
+
+### Added
+- Copy *.hpp.inc files as well during installation.
+
+### Changed
+- Rename tree-gen executable to tree-gen-exe.
+- Update conanfile.py with some changes from the Conan Center tree-gen recipe.
+- Update fmt version to 10.2.1.
+- test_requires gtest instead of requires.
+- Do not tool_require flex and bison when building for wasm architecture.
+
+### Removed
+-
+
 ## [ 1.0.1 ] - [ 2024-01-12 ]
 
 ### Added
 - 
 
 ### Changed
-- Minimal changes in order to allow creation of a tree-gen Conan Center package
+- Minimal changes in order to allow creation of a tree-gen Conan Center package.
 
 ### Removed
 -

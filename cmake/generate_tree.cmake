@@ -10,9 +10,9 @@ function(generate_tree TREE HDR SRC)
 
     # Add a command to do the generation.
     add_custom_command(
-        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}"
+        COMMAND tree-gen-exe "${TREE}" "${HDR}" "${SRC}"
         OUTPUT "${HDR}" "${SRC}"
-        DEPENDS "${TREE}" tree-gen
+        DEPENDS "${TREE}" tree-gen-exe
     )
 endfunction()
 
@@ -32,8 +32,8 @@ function(generate_tree_py TREE HDR SRC PY)
 
     # Add a command to do the generation.
     add_custom_command(
-        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}" "${PY}"
+        COMMAND tree-gen-exe "${TREE}" "${HDR}" "${SRC}" "${PY}"
         OUTPUT "${HDR}" "${SRC}" "${PY}"
-        DEPENDS "${TREE}" tree-gen
+        DEPENDS "${TREE}" tree-gen-exe
     )
 endfunction()
