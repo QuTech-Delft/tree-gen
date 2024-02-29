@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [ 1.0.2 ] - [ 2024-02-29 ]
+## [ 1.0.3 ] - [ 2024-02-29 ]
 
 ### Added
 - Copy *.hpp.inc files as well during installation.
