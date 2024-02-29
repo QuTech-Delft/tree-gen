@@ -1,5 +1,5 @@
 # Utility function for generating a C++-only tree with tree-gen.
-function(generate_tree TREE HDR SRC)
+function(generate_tree TREE_GEN_EXECUTABLE TREE HDR SRC)
     # Get the directory for the header file and make sure it exists.
     get_filename_component(HDR_DIR "${HDR}" PATH)
     file(MAKE_DIRECTORY "${HDR_DIR}")
@@ -10,14 +10,14 @@ function(generate_tree TREE HDR SRC)
 
     # Add a command to do the generation.
     add_custom_command(
-        COMMAND tree-gen-exe "${TREE}" "${HDR}" "${SRC}"
+        COMMAND "${TREE_GEN_EXECUTABLE}" "${TREE}" "${HDR}" "${SRC}"
         OUTPUT "${HDR}" "${SRC}"
-        DEPENDS "${TREE}" tree-gen-exe
+        DEPENDS "${TREE}" "${TREE_GEN_EXECUTABLE}"
     )
 endfunction()
 
 # Utility function for generating a C++ and Python tree with tree-gen.
-function(generate_tree_py TREE HDR SRC PY)
+function(generate_tree_py TREE_GEN_EXECUTABLE TREE HDR SRC PY)
     # Get the directory for the header file and make sure it exists.
     get_filename_component(HDR_DIR "${HDR}" PATH)
     file(MAKE_DIRECTORY "${HDR_DIR}")
@@ -32,8 +32,8 @@ function(generate_tree_py TREE HDR SRC PY)
 
     # Add a command to do the generation.
     add_custom_command(
-        COMMAND tree-gen-exe "${TREE}" "${HDR}" "${SRC}" "${PY}"
+        COMMAND "${TREE_GEN_EXECUTABLE}" "${TREE}" "${HDR}" "${SRC}" "${PY}"
         OUTPUT "${HDR}" "${SRC}" "${PY}"
-        DEPENDS "${TREE}" tree-gen-exe
+        DEPENDS "${TREE}" "${TREE_GEN_EXECUTABLE}"
     )
 endfunction()

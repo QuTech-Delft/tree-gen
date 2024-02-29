@@ -6,6 +6,7 @@ include(../../cmake/generate_tree.cmake)
 
 # Generates the files for the directory tree
 generate_tree_py(
+    tree-gen
     "${CMAKE_CURRENT_SOURCE_DIR}/directory.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/directory.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/directory.cpp"

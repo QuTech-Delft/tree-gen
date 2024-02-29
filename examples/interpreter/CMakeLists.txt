@@ -6,6 +6,7 @@ include(../../cmake/generate_tree.cmake)
 
 # Generates the files for the value tree
 generate_tree_py(
+    tree-gen
     "${CMAKE_CURRENT_SOURCE_DIR}/value.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/value.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/value.cpp"
@@ -14,6 +15,7 @@ generate_tree_py(
 
 # Generates the files for the program tree
 generate_tree_py(
+    tree-gen
     "${CMAKE_CURRENT_SOURCE_DIR}/program.tree"
     "${CMAKE_CURRENT_BINARY_DIR}/program.hpp"
     "${CMAKE_CURRENT_BINARY_DIR}/program.cpp"
