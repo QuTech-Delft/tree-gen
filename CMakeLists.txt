@@ -252,8 +252,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
         -Wall -Wextra -Werror -Wfatal-errors
         -fPIC
         -Wno-error=sign-compare
-        -Wno-error=unused-private-field
-        -Wno-error=unused-but-set-variable
+        -Wno-error=unused
     )
 elseif(MSVC)
     target_compile_options(tree-gen PRIVATE
