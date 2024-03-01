@@ -83,6 +83,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # This sort of fixes that (https://stackoverflow.com/questions/1941443)
 SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+# emscripten
+if(TREE_GEN_BUILD_EMSCRIPTEN)
+    add_compile_options(-fwasm-exceptions)
+    add_link_options(-fwasm-exceptions --profiling-funcs -sASSERTIONS=1 -sMODULARIZE=1)
+endif()
+
 
 #=============================================================================#
 # Package dependencies                                                        #
@@ -98,13 +104,13 @@ else()
 endif()
 
 # fmt
-set(fmt_VERSION_REQUIRED 10.1.1)
-find_package(fmt ${fmt_VERSION_REQUIRED})
-if(NOT fmt_FOUND)
-    # fmt 10.1.1
+if(NOT TREE_GEN_BUILD_EMSCRIPTEN)
+    find_package(fmt)
+endif()
+if(TREE_GEN_BUILD_EMSCRIPTEN OR NOT fmt_FOUND)
     FetchContent_Declare(fmt
         GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG "f5e54359df4c26b6230fc61d38aa294581393084"
+        GIT_TAG "e69e5f977d458f2650bb346dadf2ad30c5320281"
     )
     FetchContent_MakeAvailable(fmt)
 endif()
