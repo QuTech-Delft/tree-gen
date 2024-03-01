@@ -3,10 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [ 1.0.5 ] - [ 2024-02-29 ]
+## [ 1.0.6 ] - [ 2024-02-29 ]
 
 ### Added
 - Copy *.inc files as well during installation.
+- Add get_version and get_release_year API.
 
 ### Changed
 - Update conanfile.py with some changes from the Conan Center tree-gen recipe.
