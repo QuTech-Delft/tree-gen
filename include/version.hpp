@@ -1,7 +1,14 @@
 #pragma once
 
-#include <string_view>
+
+static const char* tree_gen_version{ "1.0.6" };
+static const char* tree_gen_release_year{ "2024" };
 
 
-static std::string_view get_version();
-static std::string_view get_release_year();
+[[nodiscard]] [[maybe_unused]] static const char* get_version() {
+    return tree_gen_version;
+}
+
+[[nodiscard]] [[maybe_unused]] static const char* get_release_year() {
+    return tree_gen_release_year;
+}

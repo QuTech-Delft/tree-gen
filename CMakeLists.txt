@@ -131,10 +131,8 @@ endif()
 #=============================================================================#
 
 # Create the library.
-set(TREE_GEN_LIB_SRCS
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp"
-)
+set(TREE_GEN_LIB_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/src/tree-all.cpp")
+
 add_library(tree-gen-lib-obj OBJECT
     ${TREE_GEN_LIB_SRCS}
 )
