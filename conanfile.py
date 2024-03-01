@@ -48,7 +48,7 @@ class TreeGenConan(ConanFile):
         return {
             "gcc": "8",
             "clang": "7",
-            "apple-clang": "14",
+            "apple-clang": "13",
             "Visual Studio": "16",
             "msvc": "192"
         }
@@ -60,9 +60,10 @@ class TreeGenConan(ConanFile):
         if self.settings.os == "Windows":
             self.tool_requires("winflexbison/2.5.24")
         else:
-            if self.settings.arch != "armv8" and self.settings.arch != "wasm":
-                self.tool_requires("flex/2.6.4")
-                self.tool_requires("bison/3.8.2")
+            self.tool_requires("flex/2.6.4")
+            self.tool_requires("bison/3.8.2")
+        if self.settings.arch == "wasm":
+            self.tool_requires("emsdk/3.1.49")
 
     def requirements(self):
         self.requires("fmt/10.2.1")
@@ -77,13 +78,14 @@ class TreeGenConan(ConanFile):
             self.options.rm_safe("fPIC")
 
     def layout(self):
-        cmake_layout(self, src_folder="src")
+        cmake_layout(self, src_folder=".")
 
     def generate(self):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["ASAN_ENABLED"] = self.options.asan_enabled
+        tc.variables["TREE_GEN_BUILD_EMSCRIPTEN"] = self.settings.arch == "wasm"
         tc.variables["TREE_GEN_BUILD_TESTS"] = self.options.build_tests
         tc.generate()
 

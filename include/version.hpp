@@ -3,7 +3,7 @@
 #include <string_view>
 
 
-#define TREE_GEN_VERSION "1.0.6"
+#define TREE_GEN_VERSION "1.0.7"
 #define TREE_GEN_RELEASE_YEAR "2024"
 
 
