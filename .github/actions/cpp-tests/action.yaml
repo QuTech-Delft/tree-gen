@@ -36,5 +36,6 @@ runs:
       shell: ${{ inputs.shell }}
     - name: Test
       working-directory: build/${{ inputs.build_type }}
-      run: ctest -C ${{ inputs.build_type }} --output-on-failure
+      run: |
+        ctest -C ${{ inputs.build_type }} --output-on-failure
       shell: ${{ inputs.shell }}
