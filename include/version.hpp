@@ -1,7 +1,7 @@
 #pragma once
 
 
-static const char* tree_gen_version{ "1.0.6" };
+static const char* tree_gen_version{ "1.0.7" };
 static const char* tree_gen_release_year{ "2024" };
 
 
