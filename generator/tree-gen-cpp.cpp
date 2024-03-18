@@ -218,6 +218,14 @@ void generate_base_class(
     source << "    visit(dumper);" << std::endl;
     source << "}" << std::endl << std::endl;
 
+    format_doc(header, "Alternate debug dump that prints node raw pointers.", "    ");
+    header << "    void dump_raw_pointers(std::ostream &out=std::cout, int indent=0);" << std::endl << std::endl;
+    format_doc(source, "Alternate debug dump that prints node raw pointers.");
+    source << "void Node::dump_raw_pointers(std::ostream &out, int indent) {" << std::endl;
+    source << "    auto dumper = Dumper(out, indent, nullptr, true);" << std::endl;
+    source << "    visit(dumper);" << std::endl;
+    source << "}" << std::endl << std::endl;
+
     for (auto &node : nodes) {
         generate_typecast_function(header, source, "Node", *node, false);
     }
@@ -897,7 +905,9 @@ void generate_dumper_class(
     format_doc(header, "Current indentation level.", "    ");
     header << "    int indent = 0;" << std::endl << std::endl;
     format_doc(header, "When non-null, the print node IDs from here instead of link contents.", "    ");
-    header << "    " << support_ns << "::base::PointerMap *ids;" << std::endl;
+    header << "    " << support_ns << "::base::PointerMap *ids;" << std::endl << std::endl;
+    format_doc(header, "Whether we're printing the raw pointers for each node.", "    ");
+    header << "    bool in_raw_pointers = false;" << std::endl << std::endl;
     format_doc(header, "Whether we're printing the contents of a link.", "    ");
     header << "    bool in_link = false;" << std::endl << std::endl;
 
@@ -914,9 +924,8 @@ void generate_dumper_class(
     // Write constructor.
     header << "public:" << std::endl << std::endl;
     format_doc(header, "Construct a dumping visitor.", "    ");
-    header << "    Dumper(std::ostream &out, int indent=0, ";
-    header << support_ns << "::base::PointerMap *ids = nullptr) : ";
-    header << "out(out), indent(indent), ids(ids) {};" << std::endl << std::endl;
+    header << "    Dumper(std::ostream &out, int indent = 0, " << support_ns << "::base::PointerMap *ids = nullptr, bool in_raw_pointers = false)" << std::endl;
+    header << "    : out(out), indent(indent), ids(ids), in_raw_pointers(in_raw_pointers) {};" << std::endl << std::endl;
 
     // Print fallback function.
     format_doc(header, "Dumps a `Node`.", "    ");
@@ -979,6 +988,9 @@ void generate_dumper_class(
                             source << "        out << \"" << type << "@\" << ids->get(node." << attrib.name << ") << std::endl;" << std::endl;
                         }
                         source << "    } else {" << std::endl;
+                        source << "        if (in_raw_pointers) {" << std::endl;
+                        source << "            out << std::hex << reinterpret_cast<const void*>(node." << attrib.name << ".get_ptr().get()) << \" \";" << std::endl;
+                        source << "        }" << std::endl;
                         source << "        out << \"<\" << std::endl;" << std::endl;
                         source << "        indent++;" << std::endl;
                         if (attrib.ext_type == Link || attrib.ext_type == OptLink) {
