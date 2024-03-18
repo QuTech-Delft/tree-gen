@@ -82,7 +82,6 @@ jobs:
         # So, for the time being, we are installing flex/bison manually for this platform
         run: |
           apt-get update
-#          apt-get install -y bison flex pipx
           apt-get install -y pipx
       - name: Add Conan to path
         # Add Conan to path (even before it is installed)
