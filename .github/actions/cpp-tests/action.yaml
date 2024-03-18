@@ -37,5 +37,5 @@ runs:
     - name: Test
       working-directory: build/${{ inputs.build_type }}
       run: |
-        ctest -C ${{ inputs.build_type }} --output-on-failure
+        ctest -C ${{ inputs.build_type }} --output-on-failure --parallel 10
       shell: ${{ inputs.shell }}

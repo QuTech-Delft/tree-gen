@@ -66,7 +66,6 @@ class TreeGenConan(ConanFile):
             self.tool_requires("emsdk/3.1.49")
 
     def requirements(self):
-        self.requires("fmt/10.2.1")
         self.requires("range-v3/0.12.0")
 
     def config_options(self):
@@ -85,7 +84,6 @@ class TreeGenConan(ConanFile):
         deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["ASAN_ENABLED"] = self.options.asan_enabled
-        tc.variables["TREE_GEN_BUILD_EMSCRIPTEN"] = self.settings.arch == "wasm"
         tc.variables["TREE_GEN_BUILD_TESTS"] = self.options.build_tests
         tc.generate()
 

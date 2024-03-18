@@ -4,7 +4,7 @@ if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif()
 
-project(tree-gen LANGUAGES CXX)
+project(tree-gen LANGUAGES C CXX)
 
 # If tree-gen was already included elsewhere in the project, don't include it
 # again. There should be only one place for it and one version per project.
@@ -83,12 +83,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # This sort of fixes that (https://stackoverflow.com/questions/1941443)
 SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-# emscripten
-if(TREE_GEN_BUILD_EMSCRIPTEN)
-    add_compile_options(-fwasm-exceptions)
-    add_link_options(-fwasm-exceptions --profiling-funcs -sASSERTIONS=1 -sMODULARIZE=1)
-endif()
-
 
 #=============================================================================#
 # Package dependencies                                                        #
@@ -104,20 +98,17 @@ else()
 endif()
 
 # fmt
-if(NOT TREE_GEN_BUILD_EMSCRIPTEN)
-    find_package(fmt)
-endif()
-if(TREE_GEN_BUILD_EMSCRIPTEN OR NOT fmt_FOUND)
-    FetchContent_Declare(fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG "e69e5f977d458f2650bb346dadf2ad30c5320281"
-    )
-    FetchContent_MakeAvailable(fmt)
-endif()
+message(STATUS "Fetching fmt")
+FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG "e69e5f977d458f2650bb346dadf2ad30c5320281"
+)
+FetchContent_MakeAvailable(fmt)
 
 # range-v3
 find_package(range-v3)
 if(NOT range-v3_FOUND)
+    message(STATUS "Fetching range-v3")
     FetchContent_Declare(range-v3
         GIT_REPOSITORY https://github.com/ericniebler/range-v3
         GIT_TAG "a81477931a8aa2ad025c6bda0609f38e09e4d7ec"
@@ -155,7 +146,7 @@ target_include_directories(
     PUBLIC ${TREE_GEN_LIB_PUBLIC_INCLUDE}
 )
 target_link_libraries(tree-gen-lib-obj
-    PRIVATE fmt::fmt
+    PRIVATE fmt::fmt-header-only
     PRIVATE range-v3::range-v3
 )
 
@@ -242,7 +233,7 @@ target_include_directories(tree-gen
 )
 
 target_link_libraries(tree-gen
-    PRIVATE fmt::fmt
+    PRIVATE fmt::fmt-header-only
     PRIVATE range-v3::range-v3
 )
 
