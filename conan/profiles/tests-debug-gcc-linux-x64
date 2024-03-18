@@ -1,4 +1,1 @@
 include(tests-debug)
-
-[options]
-tree-gen/*:asan_enabled=False
