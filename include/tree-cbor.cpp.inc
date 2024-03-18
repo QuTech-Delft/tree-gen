@@ -17,7 +17,7 @@ Reader::Reader(const std::string &data) : Reader(std::string(data)) {}
  * a Reader representation that may be used to parse it.
  */
 Reader::Reader(std::string &&data) :
-    data(std::make_shared<std::string>(std::forward<std::string>(data))),
+    data(std::make_shared<std::string>(std::move(data))),
     slice_offset(0),
     slice_length(this->data->size())
 {
