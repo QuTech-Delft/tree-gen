@@ -6,4 +6,4 @@ tree-gen/*:build_type=Debug
 
 [options]
 tree-gen/*:asan_enabled=True
-tree-gen/*:build_tests=True
+tree-gen/*:build_tests=False
