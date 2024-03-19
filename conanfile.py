@@ -66,7 +66,7 @@ class TreeGenConan(ConanFile):
             self.tool_requires("emsdk/3.1.49")
 
     def requirements(self):
-        self.requires("fmt/10.2.0")
+        self.requires("fmt/10.2.1")
         self.requires("range-v3/0.12.0")
 
     def config_options(self):
