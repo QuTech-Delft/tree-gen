@@ -3,7 +3,7 @@ name: Test
 on:
   push:
     branches:
-    - master
+    - 22-infra-enable-asan-for-github-actions-linuxx64-builds
   pull_request:
 
 jobs:
