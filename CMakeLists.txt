@@ -149,8 +149,8 @@ target_include_directories(
     PUBLIC ${TREE_GEN_LIB_PUBLIC_INCLUDE}
 )
 target_link_libraries(tree-gen-lib-obj
-    fmt::fmt
-    range-v3::range-v3
+    PRIVATE fmt::fmt
+    PRIVATE range-v3::range-v3
 )
 
 # Set variables at possible parent projects.
