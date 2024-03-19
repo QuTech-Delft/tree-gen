@@ -9,4 +9,6 @@ tools.build:cxxflags=["-stdlib=libc++"]
 tools.build:compiler_executables={ 'c' : 'clang', 'cpp' : 'clang++' }
 
 [options]
+# Disable ASAN for Linux/x64 because we are having problems with gtest and address sanitizer
+# Possible hints: libc++ ABI compatibility, small string optimization
 tree-gen/*:asan_enabled=False
