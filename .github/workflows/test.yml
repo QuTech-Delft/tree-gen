@@ -61,7 +61,6 @@ jobs:
         with:
           build_type: ${{ matrix.build_type }}
           conan_profile_host: conan/profiles/tests-${{ matrix.build_type }}-msvc-windows-x64
-          conan_profile_build: conan/profiles/tests-${{ matrix.build_type }}-msvc-windows-x64
           shell: bash
 
   cpp-linux-arm64:

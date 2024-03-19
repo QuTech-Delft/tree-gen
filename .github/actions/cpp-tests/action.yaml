@@ -10,7 +10,7 @@ inputs:
   conan_profile_build:
     required: false
     description: Which conan profile build to use
-    default: 'default'
+    default: ${{ inputs.conan_profile_host }}
   shell:
     required: true
     description: Which shell to use for the `run` command
@@ -27,7 +27,6 @@ runs:
     - name: Configure and build
       run: |
         conan profile detect --force
-        conan_profile=${{ inputs.conan_profile }}
         prh=${{ inputs.conan_profile_host }}
         lowercase_prh=$(echo ${prh} | tr '[:upper:]' '[:lower:]')
         prb=${{ inputs.conan_profile_build }}
