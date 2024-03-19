@@ -279,7 +279,7 @@ if(TREE_GEN_BUILD_TESTS)
     set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
     add_subdirectory(test)
-#    add_subdirectory(examples)
+    add_subdirectory(examples)
 endif()
 
 
