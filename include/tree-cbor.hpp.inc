@@ -67,11 +67,6 @@ public:
      */
     explicit Reader(std::string &&data);
 
-    /**
-     * Destructor.
-     */
-    virtual ~Reader() = default;
-
 private:
 
     /**
