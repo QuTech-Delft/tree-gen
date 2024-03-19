@@ -9,7 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Add Dumper::dump_raw_pointers API.
 
 ### Changed
--
+- Update GitHub actions and workflows to look more like libqasm's.
 
 ### Removed
 -
