@@ -4,13 +4,9 @@ inputs:
   build_type:
     required: true
     description: Is the build a debug or release version
-  conan_profile_host:
+  conan_profile:
     required: true
-    description: Which conan profile host to use
-  conan_profile_build:
-    required: false
-    description: Which conan profile build to use
-    default: ${{ inputs.conan_profile_host }}
+    description: Which conan profile to use
   shell:
     required: true
     description: Which shell to use for the `run` command
@@ -27,11 +23,9 @@ runs:
     - name: Configure and build
       run: |
         conan profile detect --force
-        prh=${{ inputs.conan_profile_host }}
-        lowercase_prh=$(echo ${prh} | tr '[:upper:]' '[:lower:]')
-        prb=${{ inputs.conan_profile_build }}
-        lowercase_prb=$(echo ${prb} | tr '[:upper:]' '[:lower:]')
-        conan build . -pr:h=${lowercase_prh} -pr:b=${lowercase_prb} -b missing
+        pr=${{ inputs.conan_profile }}
+        lowercase_pr=$(echo ${pr} | tr '[:upper:]' '[:lower:]')
+        conan build . -pr:h=${lowercase_pr} -pr:b=${lowercase_pr} -b missing
       shell: ${{ inputs.shell }}
     - name: Test
       working-directory: build/${{ inputs.build_type }}
