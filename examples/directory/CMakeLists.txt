@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
-project(directory-example CXX)
+project(directory-example C CXX)
 
 include(../../cmake/generate_tree.cmake)
 
@@ -12,7 +12,6 @@ generate_tree_py(
     "${CMAKE_CURRENT_BINARY_DIR}/directory.cpp"
     "${CMAKE_CURRENT_BINARY_DIR}/directory.py"
 )
-
 
 add_executable(directory-example
     "${CMAKE_CURRENT_BINARY_DIR}/directory.cpp"

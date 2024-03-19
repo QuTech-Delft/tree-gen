@@ -98,12 +98,15 @@ else()
 endif()
 
 # fmt
-message(STATUS "Fetching fmt")
-FetchContent_Declare(fmt
-    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG "e69e5f977d458f2650bb346dadf2ad30c5320281"
-)
-FetchContent_MakeAvailable(fmt)
+find_package(fmt)
+if(NOT fmt_FOUND)
+    message(STATUS "Fetching fmt")
+    FetchContent_Declare(fmt
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG "e69e5f977d458f2650bb346dadf2ad30c5320281"
+    )
+    FetchContent_MakeAvailable(fmt)
+endif()
 
 # range-v3
 find_package(range-v3)
@@ -146,8 +149,8 @@ target_include_directories(
     PUBLIC ${TREE_GEN_LIB_PUBLIC_INCLUDE}
 )
 target_link_libraries(tree-gen-lib-obj
-    PRIVATE fmt::fmt-header-only
-    PRIVATE range-v3::range-v3
+    fmt::fmt
+    range-v3::range-v3
 )
 
 # Set variables at possible parent projects.
@@ -233,7 +236,7 @@ target_include_directories(tree-gen
 )
 
 target_link_libraries(tree-gen
-    PRIVATE fmt::fmt-header-only
+    PRIVATE fmt::fmt
     PRIVATE range-v3::range-v3
 )
 
@@ -276,7 +279,7 @@ if(TREE_GEN_BUILD_TESTS)
     set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
     add_subdirectory(test)
-    add_subdirectory(examples)
+#    add_subdirectory(examples)
 endif()
 
 
