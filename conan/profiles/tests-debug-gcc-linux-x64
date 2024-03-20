@@ -1,5 +1,1 @@
 include(tests-debug)
-
-[conf]
-tools.build:cxxflags=["-stdlib=libc++"]
-tools.build:compiler_executables={ 'c' : 'gcc', 'cpp' : 'g++' }
