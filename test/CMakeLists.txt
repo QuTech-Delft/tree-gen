@@ -2,14 +2,15 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Packages
 include(FetchContent)
-FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG "61720589cbef9707b3c5247d02141a7c31e2876f"
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(
-    googletest
-)
+find_package(GTest)
+if(NOT GTest_FOUND)
+    FetchContent_Declare(gtest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG "61720589cbef9707b3c5247d02141a7c31e2876f"
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(gtest)
+endif()
 include(GoogleTest)
 
 # Test executable
@@ -32,8 +33,8 @@ target_include_directories(${PROJECT_NAME}_test PRIVATE
 
 # Target options
 target_link_libraries(${PROJECT_NAME}_test PRIVATE
-    tree-gen-lib
-    gtest
+    PRIVATE tree-gen-lib
+    PRIVATE gtest::gtest
 )
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(${PROJECT_NAME}_test PRIVATE

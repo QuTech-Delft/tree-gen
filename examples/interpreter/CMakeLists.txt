@@ -30,14 +30,12 @@ add_executable(interpreter-example
 
 target_include_directories(
     interpreter-example
-    # This directory for primitives.hpp
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-    # Binary directory for interpreter.hpp
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"  # Current directory for primitives.hpp
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"  # Binary directory for interpreter.hpp
 )
 
 target_link_libraries(interpreter-example
-    tree-gen-lib
+    PRIVATE tree-gen-lib
 )
 
 # The following lines only serve to register the example as a test,

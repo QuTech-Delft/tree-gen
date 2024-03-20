@@ -19,14 +19,12 @@ add_executable(directory-example
 )
 
 target_include_directories(directory-example
-    # This directory for primitives.hpp
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-    # Binary directory for directory.hpp
-    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"  # Current directory for primitives.hpp
+    PRIVATE "${CMAKE_CURRENT_BINARY_DIR}"  # Binary directory for directory.hpp
 )
 
 target_link_libraries(directory-example
-    tree-gen-lib
+    PRIVATE tree-gen-lib
 )
 
 # The following lines only serve to register the example as a test,
