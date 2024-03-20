@@ -7,8 +7,8 @@ include(FetchContent)
 find_package(GTest)
 if(NOT GTest_FOUND)
     FetchContent_Declare(gtest
-            GIT_REPOSITORY https://github.com/google/googletest.git
-            GIT_TAG "61720589cbef9707b3c5247d02141a7c31e2876f"
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG "61720589cbef9707b3c5247d02141a7c31e2876f"
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(gtest)
