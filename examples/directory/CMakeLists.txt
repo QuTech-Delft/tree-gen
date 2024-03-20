@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
-project(directory-example C CXX)
+project(directory-example CXX)
 
 include(../../cmake/generate_tree.cmake)
 
