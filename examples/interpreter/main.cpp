@@ -1,9 +1,9 @@
 #include "../utils.hpp"
 
-#include <cstdio>
-#include <iostream>
+#include <fmt/core.h>
 #include <sstream>  // ostringstream
-#include <stdexcept>
+#include <stdexcept>  // runtime_error
+#include <string>
 
 // Include the generated files.
 #include "value.hpp"
@@ -201,8 +201,7 @@ int main() {
         R"(alue":"2","source_location":"test:1:5"}},"source_location":"test:1:1"}}],"source)"
         R"(_location":"test:1:1"}})"
     );
-    std::printf("%s", oss.str().c_str());
-    std::printf("\n");
+    fmt::print("{}\n", oss.str());
     MARKER
 
     // Note that we can still use these pointers despite ownership having been

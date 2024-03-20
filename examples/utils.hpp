@@ -1,9 +1,12 @@
 #pragma once
 
+#include <fmt/core.h>
+#include <stdexcept>  // runtime_error
+
 #define ASSERT(x)                                                                                                       \
     do {                                                                                                                \
         if (!(x)) {                                                                                                     \
-            throw std::runtime_error("assertion failed: " #x " is false at " __FILE__ ":" + std::to_string(__LINE__));  \
+            throw std::runtime_error{ fmt::format("assertion failed: {} is false at {}:{}", #x, __FILE__, __LINE__) };  \
         }                                                                                                               \
     } while (0)
 
@@ -11,10 +14,10 @@
     do {                                                                                                                \
         try {                                                                                                           \
             x;                                                                                                          \
-            throw std::runtime_error("assertion failed: no exception at " __FILE__ ":" + std::to_string(__LINE__));     \
+            throw std::runtime_error{ fmt::format("assertion failed: no exception at {}:{}", __FILE__, __LINE__) } ;    \
         } catch (exc &e) {                                                                                              \
-            std::cout << #exc << " exception message: " << e.what() << std::endl;                                       \
+            fmt::print("{} exception message: {}\n", #exc, e.what());                                                   \
         }                                                                                                               \
     } while (0)
 
-#define MARKER std::cout << "###MARKER###" << std::endl;
+#define MARKER fmt::print("###MARKER###\n");

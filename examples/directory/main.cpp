@@ -1,9 +1,10 @@
 #include "../utils.hpp"
 
-#include <cstdio>
-#include <iostream>
+#include <fmt/core.h>
+#include <fstream>
+#include <ios>
 #include <sstream>  // ostringstream
-#include <stdexcept>
+#include <string>
 
 // Include the generated file.
 #include "directory.hpp"
@@ -238,15 +239,15 @@ int main() {
     int count = 0;
     for (char c : cbor) {
         if (count == 16) {
-            std::printf("\n");
+            fmt::print("\n");
             count = 0;
         } else if (count > 0 && count % 4 == 0) {
-            std::printf(" ");
+            fmt::print(" ");
         }
-        std::printf("%02X ", (uint8_t)c);
+        fmt::print("{:02X} ", static_cast<uint8_t>(c));
         count++;
     }
-    std::printf("\n");
+    fmt::print("\n");
     MARKER
 
     // You can pull that through http://cbor.me and https://jsonformatter.org
@@ -277,8 +278,7 @@ int main() {
         R"({"target":"...","name":"SomeUser"}}],"name":""}},"name":"evil link to C:"}}],"na)"
         R"(me":""}}}}]}})"
     );
-    std::printf("%s", oss.str().c_str());
-    std::printf("\n");
+    fmt::print("{}\n", oss.str());
     MARKER
 
     // Note that equality for two link edges is satisfied only if they point to

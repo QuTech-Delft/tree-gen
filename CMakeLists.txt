@@ -4,7 +4,7 @@ if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif()
 
-project(tree-gen LANGUAGES C CXX)
+project(tree-gen LANGUAGES CXX)
 
 # If tree-gen was already included elsewhere in the project, don't include it
 # again. There should be only one place for it and one version per project.

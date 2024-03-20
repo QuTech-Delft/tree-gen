@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Packages
 include(FetchContent)
+
+# gtest
 find_package(GTest)
 if(NOT GTest_FOUND)
     message(STATUS "Fetching gtest")
@@ -11,6 +13,7 @@ if(NOT GTest_FOUND)
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(gtest)
+    add_library(gtest::gtest ALIAS gtest)
 endif()
 include(GoogleTest)
 
