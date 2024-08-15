@@ -55,7 +55,7 @@ class TreeGenConan(ConanFile):
 
     def build_requirements(self):
         if self.options.build_tests:
-            self.test_requires("gtest/1.14.0")
+            self.test_requires("gtest/1.15.0")
         self.tool_requires("m4/1.4.19")
         if self.settings.os == "Windows":
             self.tool_requires("winflexbison/2.5.24")
@@ -63,10 +63,10 @@ class TreeGenConan(ConanFile):
             self.tool_requires("flex/2.6.4")
             self.tool_requires("bison/3.8.2")
         if self.settings.arch == "wasm":
-            self.tool_requires("emsdk/3.1.49")
+            self.tool_requires("emsdk/3.1.50")
 
     def requirements(self):
-        self.requires("fmt/10.2.1")
+        self.requires("fmt/11.0.2")
         self.requires("range-v3/0.12.0")
 
     def config_options(self):
