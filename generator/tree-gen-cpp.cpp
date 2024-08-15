@@ -7,6 +7,7 @@
 
 #include <cctype>
 #include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <fstream>
 #include <iostream>
 #include <string>
