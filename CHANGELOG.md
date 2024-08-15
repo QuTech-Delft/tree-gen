@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [ 1.0.8 ] - [ 2024-08-15 ]
+
+### Changed
+- Bump dependencies versions.
+
 ## [ 1.0.7 ] - [ 2024-03-18 ]
 
 ### Added
@@ -10,9 +15,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Update GitHub actions and workflows to look more like libqasm's.
-
-### Removed
--
 
 ## [ 1.0.6 ] - [ 2024-02-29 ]
 
@@ -27,16 +29,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Change `-Wno-error=unused-but-set-variable` to `-Wno-error=unused` (apple-clang 13).
 - Do not `tool_requires` flex and bison when building for wasm architecture.
 
-### Removed
--
-
 ## [ 1.0.1 ] - [ 2024-01-12 ]
-
-### Added
-- 
 
 ### Changed
 - Minimal changes in order to allow creation of a tree-gen Conan Center package.
-
-### Removed
--

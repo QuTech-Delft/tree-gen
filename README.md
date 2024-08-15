@@ -42,7 +42,7 @@ So, for the time being, we are installing Flex/Bison and Java manually for this 
 
 ```python
 def requirements(self):
-    self.requires("tree-gen/1.0.7")
+    self.requires("tree-gen/1.0.8")
 ```
 
 And then used something like:
