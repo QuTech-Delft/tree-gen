@@ -1212,7 +1212,7 @@ void generate_json_dumper_class(
                     case Many:
                         fmt::print(source, R"(
                             if (node.{0}.empty()) {
-                                out << "\"{0}\":\"{1}\"";
+                                out << "\"{0}\":{1}";
                             } else {
                                 out << "\"{0}\":[";
                                 bool first_element = true;
@@ -1231,7 +1231,7 @@ void generate_json_dumper_class(
                                 out << "]";
                             })"_indent_4_remove_first_line,
                             attrib.name,
-                            (attrib.ext_type == Many) ? "!MISSING" : "[]",
+                            (attrib.ext_type == Many) ? R"(\"!MISSING\")" : "[]",
                             (attrib.type == Prim) ? "sptr->dump_json(out)" : "sptr->visit(*this)");
                         break;
                     case Prim:

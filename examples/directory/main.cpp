@@ -262,21 +262,7 @@ int main() {
     std::ostringstream oss{};
     system2->dump_json(oss);
     ASSERT(oss.str() ==
-        R"({"System":{"drives":[{"Drive":{"letter":"C","root_dir":{"Directory":{"entries":[)"
-        R"({"Directory":{"entries":"[]","name":"Program Files"}},{"Directory":{"entries":"[)"
-        R"(]","name":"Windows"}},{"Directory":{"entries":"[]","name":"Users"}},{"File":{"co)"
-        R"(ntents":"lots of hibernation data","name":"hiberfil.sys"}},{"File":{"contents":")"
-        R"(lots of page file data","name":"pagefile.sys"}},{"File":{"contents":"lots of swa)"
-        R"(p data","name":"swapfile.sys"}},{"Mount":{"target":{"Directory":{"entries":[{"Mo)"
-        R"(unt":{"target":"...","name":"evil link to C:"}}],"name":""}},"name":"SomeUser"}})"
-        R"(],"name":""}}}},{"Drive":{"letter":"D","root_dir":{"Directory":{"entries":[{"Mou)"
-        R"(nt":{"target":{"Directory":{"entries":[{"Directory":{"entries":"[]","name":"Prog)"
-        R"(ram Files"}},{"Directory":{"entries":"[]","name":"Windows"}},{"Directory":{"entr)"
-        R"(ies":"[]","name":"Users"}},{"File":{"contents":"lots of hibernation data","name")"
-        R"(:"hiberfil.sys"}},{"File":{"contents":"lots of page file data","name":"pagefile.)"
-        R"(sys"}},{"File":{"contents":"lots of swap data","name":"swapfile.sys"}},{"Mount":)"
-        R"({"target":"...","name":"SomeUser"}}],"name":""}},"name":"evil link to C:"}}],"na)"
-        R"(me":""}}}}]}})"
+        R"({"System":{"drives":[{"Drive":{"letter":"C","root_dir":{"Directory":{"entries":[{"Directory":{"entries":[],"name":"Program Files"}},{"Directory":{"entries":[],"name":"Windows"}},{"Directory":{"entries":[],"name":"Users"}},{"File":{"contents":"lots of hibernation data","name":"hiberfil.sys"}},{"File":{"contents":"lots of page file data","name":"pagefile.sys"}},{"File":{"contents":"lots of swap data","name":"swapfile.sys"}},{"Mount":{"target":{"Directory":{"entries":[{"Mount":{"target":"...","name":"evil link to C:"}}],"name":""}},"name":"SomeUser"}}],"name":""}}}},{"Drive":{"letter":"D","root_dir":{"Directory":{"entries":[{"Mount":{"target":{"Directory":{"entries":[{"Directory":{"entries":[],"name":"Program Files"}},{"Directory":{"entries":[],"name":"Windows"}},{"Directory":{"entries":[],"name":"Users"}},{"File":{"contents":"lots of hibernation data","name":"hiberfil.sys"}},{"File":{"contents":"lots of page file data","name":"pagefile.sys"}},{"File":{"contents":"lots of swap data","name":"swapfile.sys"}},{"Mount":{"target":"...","name":"SomeUser"}}],"name":""}},"name":"evil link to C:"}}],"name":""}}}}]}})"
     );
     fmt::print("{}\n", oss.str());
     MARKER

@@ -196,10 +196,7 @@ int main() {
     std::ostringstream oss{};
     tree->dump_json(oss);
     ASSERT(oss.str() ==
-        R"({"Program":{"variables":"[]","statements":[{"Assignment":{"lhs":{"Reference":{"n)"
-        R"(ame":"x","target":"!MISSING","source_location":"test:1:1"}},"rhs":{"Literal":{"v)"
-        R"(alue":"2","source_location":"test:1:5"}},"source_location":"test:1:1"}}],"source)"
-        R"(_location":"test:1:1"}})"
+        R"({"Program":{"variables":[],"statements":[{"Assignment":{"lhs":{"Reference":{"name":"x","target":"!MISSING","source_location":"test:1:1"}},"rhs":{"Literal":{"value":"2","source_location":"test:1:5"}},"source_location":"test:1:1"}}],"source_location":"test:1:1"}})"
     );
     fmt::print("{}\n", oss.str());
     MARKER
