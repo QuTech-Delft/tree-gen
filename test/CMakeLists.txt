@@ -61,4 +61,5 @@ endif()
 
 gtest_discover_tests(${PROJECT_NAME}_test
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    DISCOVERY_TIMEOUT 600
 )
